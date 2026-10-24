@@ -1,0 +1,33 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+
+\title{Macromate: Pakistani Food Recognition and Nutrition Logging\\Deliverable 1 Technical Report}
+\author{Mohid Israr (24L-2510)\\Adnan Zaka (24i-2537)\\Hassan Mehmood (24L-2559)}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Problem and Users}
+Macromate aims to make nutrition logging easier for adults who track Pakistani meals for general fitness. A user will upload a photo of one main dish, confirm or correct the suggested label, and enter a serving size. The system will calculate approximate calories and macronutrients from a documented reference. Recipe variation means the result is an estimate.
+
+\section{Why AI Is Needed}
+Food photos differ in angle, lighting, background, and recipe appearance. Simple fixed rules cannot reliably distinguish dishes such as chicken biryani and chicken pulao. We plan to measure the accuracy of pretrained CLIP on selected Pakistani dishes, fine-tune a small part of its image encoder using labeled photos, and compare both versions on the same held-out test set. Nutrition multiplication is not treated as an AI task.
+
+\section{Scope and Labels}
+The initial labels are chicken biryani, chicken pulao, chicken karahi, daal, nihari, haleem, samosa, and chapati. The final list depends on the image and nutrition data audit. Mixed plates, automatic portion estimation, and medical advice are outside the initial scope.
+
+\section{Data Collection}
+\textbf{To complete:} Describe each actual image source, usage terms, collection method, and raw class count. Link these statements to \texttt{data/sources.csv} and the acquisition evidence. Do not submit this placeholder.
+
+\section{Cleaning and Preprocessing}
+\textbf{To complete:} Report the actual missing-value checks, unreadable files, duplicates, outlier review, image normalization, dish-label encoding, and raw-to-clean counts from the Phase 2 scripts. Do not submit this placeholder.
+
+\section{Initial Data Exploration}
+\textbf{To complete:} Insert real raw-data charts with captions and explain what they show. Do not submit this placeholder.
+
+\section{Planned AI Evaluation}
+Zero-shot CLIP and fine-tuned CLIP will use the same held-out test photos. Planned measures are top-1 and top-3 accuracy, per-dish accuracy, and a confusion matrix. Validation photos may guide prompt wording or training settings; the final test photos will remain untouched until evaluation.
+
+\end{document}

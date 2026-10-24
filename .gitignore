@@ -1,0 +1,24 @@
+# Python and local environments
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Raw data and generated data
+data/raw/
+data/processed/
+*.pt
+*.pth
+*.safetensors
+
+# LaTeX build output (retain report/main.pdf when it is ready)
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.synctex.gz
+
+# Temporary files and system files
+tmp/
+.DS_Store
+Thumbs.db
