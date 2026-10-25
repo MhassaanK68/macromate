@@ -26,10 +26,11 @@ README.md                       Project setup and status
 .gitignore                      Excludes raw images and build files
 requirements.txt                Dependencies for current data scripts
 data scripts/                   Phase 2 Python scripts (folder name required by handout)
-data/metadata.csv               Image manifest; headers only until acquisition
-data/nutrition.csv              Nutrition reference table; headers only until research
+data/review_decisions.csv       Manual near-duplicate review decisions (currently none needed)
+data/metadata.csv               Image manifest: 400 images, source, license, original file
+data/nutrition.csv              Nutrition per 100 g for 8 dishes, with source and recipe assumptions
 data/sources.csv                Dataset/source provenance; headers only until acquisition
-data/raw/                       Local raw images (ignored by Git)
+data/images/                    Local images, one folder per dish (ignored by Git)
 data/processed/                 Generated cleaned data (ignored by Git)
 figures/                        Report figures after real data is collected
 report/main.tex                 LaTeX report draft
@@ -40,9 +41,11 @@ The internal `planning/` guide is excluded locally and is **not part of the cour
 
 ## Current data status and usage conditions
 
-No raw image dataset or nutrition values have been added yet. The header-only CSV files are schemas, **not evidence of data acquisition**. Mohid will record each image source in `data/sources.csv`, including its URL, access date, and license or usage terms. Images will be stored in `data/raw/` locally and will not be uploaded to GitHub unless redistribution is allowed. Adnan will record a source and recipe assumptions for each nutrition row.
+The collection contains **400 images, 50 for each of the eight dishes**, selected from four public Roboflow Universe datasets released under **CC BY 4.0** (as stated by their uploaders): IndianFoodRecog (EnVisionAI), combined-dataset (Rafias Workspace), Bangladeshi Food Classification2 (NSN) and samosa. `data/sources.csv` records each dataset's URL, version URL, access date, license, export format and archive SHA-256. `data/metadata.csv` records, for every image, its source, author, license, original file name inside the dataset archive, and the SHA-256 of the image file. Nutrition values for all eight dishes (per 100 g, with source, calculation and recipe assumption) are in `data/nutrition.csv`.
 
-To obtain the raw images as a reviewer, follow the source URLs and download/import instructions that will be added to `data/sources.csv` and this README after sources are chosen. This is **not yet reproducible** because the sources have not been selected. If a source restricts sharing, the README will describe its authorized download process rather than copy the files into the repository.
+Images are stored in `data/images/` locally and are **not uploaded to GitHub**. To obtain them as a reviewer, open each dataset's `version_url` in `data/sources.csv`, download it in the listed export format, check the archive hash, and copy the files named in the `original_path` column of `data/metadata.csv` to the `local_path` given there. Credit the original authors when reusing images.
+
+Known limits: the second human review of labels is still pending for all images; the sources are largely Indian and Bangladeshi, so Pakistani appearance is only partly represented; the providers resized every image to a square, so image size depends on the source (see the report's EDA section).
 
 ## Set up the current data scripts
 
@@ -54,16 +57,30 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-Add image records to `data/metadata.csv` after placing allowed images under `data/raw/`. `local_path` is relative to the repository root, for example `data/raw/biryani/image_001.jpg`. Use one of the exact dish labels above. Record the image's `source_id` in `data/sources.csv`.
+Add image records to `data/metadata.csv` after placing allowed images under `data/images/` (git-ignored). `local_path` is relative to the repository root, for example `data/images/daal/RF_COMBINED_0123456789abcdef.jpg`. Use one of the exact dish labels above. Record the image's `source_id` in `data/sources.csv`.
 
-Run the initial cleaning and chart scripts:
+Optional metadata column: add `group_id` to `data/metadata.csv` and give photos of the same physical plate the same value, so the split keeps them together.
+
+Run the Phase 2 pipeline in this order (from the repository root):
 
 ```powershell
-python "data scripts/clean_data.py"
-python "data scripts/eda.py"
+python "data scripts/clean_data.py"     # 4.1 validate, 4.2 duplicates + outliers + nutrition checks
+python "data scripts/preprocess.py"     # 4.3 CLIP preprocessing + dish-name -> integer ID mapping
+python "data scripts/split_data.py"     # 4.4 seeded, stratified, leakage-aware train/val/test split
+python "data scripts/eda.py"            # EDA charts in figures/
+python "data scripts/verify_reproducible.py"   # 4.5 runs the pipeline twice and compares outputs
 ```
 
-The cleaning script writes `data/processed/metadata_clean.csv` and `data/processed/cleaning_summary.json` when data is present. It checks required fields, supported labels, readable image files, duplicate IDs and image bytes, and basic nutrition values. The chart script writes `figures/raw_class_counts.png` after at least one metadata row exists. With the current empty CSVs, the scripts report that data collection is pending; they do not fabricate charts or counts. The Phase 2 pipeline and EDA will be expanded once real data is collected.
+| Script | What it does | Main outputs (`data/processed/`) |
+| --- | --- | --- |
+| `common.py` | Dish list, label IDs, CLIP constants, split seed | (shared by all scripts) |
+| `clean_data.py` | Checks columns, labels, sources, readable files; removes exact duplicates (and copies under conflicting labels); lists near-duplicate pairs by perceptual hash for **human review**; flags image outliers (not removed); validates nutrition values | `metadata_clean.csv`, `exclusions.csv`, `near_duplicate_pairs.csv`, `outlier_flags.csv`, `nutrition_clean.csv`, `cleaning_summary.json` |
+| `preprocess.py` | Official CLIP image preprocessing (RGB, resize 224, centre crop, normalise); stable label IDs; nutrition kept per 100 g | `clip_224/`, `label_map.json`, `preprocess_summary.json` |
+| `split_data.py` | 70/15/15 split per dish with seed 42; near-duplicates and same-plate photos stay in one split; runs leakage checks | `split.csv`, `split_summary.json` |
+| `eda.py` | Class counts, missing data, sample photos, size distributions, correlations, source mix, split, nutrition charts | `figures/*.png` |
+| `verify_reproducible.py` | Runs the pipeline twice, compares SHA-256 of every output | `reproducibility_check.json` |
+
+Near-duplicates are **flagged, never deleted automatically**. After reviewing `near_duplicate_pairs.csv`, record each removal in `data/review_decisions.csv` (`image_id,decision,reason` with `decision` = `drop`) and re-run the pipeline. Outlier flags are for review only. With the current empty CSVs the scripts report that data collection is pending; they do not fabricate charts or counts.
 
 ## Compile the LaTeX report
 
