@@ -1,0 +1,24 @@
+{
+  "archive_sha256_recorded_but_not_rechecked": "bd12a74a36fee551cab18e14f139af48de3ed53b207e84fcbfde9bdd7c7a7fbd",
+  "evidence_basis": "Derived from repository sources.csv, metadata.csv and committed image files",
+  "limitations": [
+    "Original provider export archive is not preserved in this repository.",
+    "Original provider README is not preserved in this repository.",
+    "The recorded archive SHA-256 cannot be rechecked without that archive.",
+    "This summary is not evidence of a completed second human label review."
+  ],
+  "review_status_counts": {
+    "initial_screen_kept_second_human_review_pending": 64
+  },
+  "selected_image_count": 64,
+  "selected_image_hashes_verified_against_manifest": 64,
+  "selected_images_by_dish": {
+    "chapati": 50,
+    "daal": 14
+  },
+  "source_id": "RF_CHAPATI",
+  "source_name": "IndianFoodRecog / EnVisionAI",
+  "source_url": "https://universe.roboflow.com/envisionai/indianfoodrecog",
+  "uploader_stated_license": "CC BY 4.0 (provider README and project page)",
+  "version_url": "https://universe.roboflow.com/envisionai/indianfoodrecog/dataset/1"
+}

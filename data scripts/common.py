@@ -8,15 +8,21 @@ after the data audit.
 import csv
 import hashlib
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 RAW = DATA / "raw"
 IMAGES = DATA / "images"          # Section 3 package stores images here
-RAW_DIRS = [RAW, IMAGES]          # images may live in either folder (both git-ignored)
+RAW_DIRS = [RAW, IMAGES]          # images may live in either folder
 PROCESSED = DATA / "processed"
 FIGURES = ROOT / "figures"
+GENERATED_FIGURES = [
+    "raw_class_counts.png", "missing_data.png", "sample_images.png",
+    "image_size_distribution.png", "class_by_source.png",
+    "feature_correlation.png", "split_distribution.png", "nutrition_macros.png",
+]
 
 # Canonical dish names.  The ORDER defines the integer label IDs (0..7), so it
 # stays fixed even if a class temporarily has no images.
@@ -81,7 +87,7 @@ def write_csv(path: Path, fieldnames: list[str], rows: list[dict]) -> None:
 def write_json(path: Path, obj: object) -> None:
     """Deterministic JSON: sorted keys, no timestamps."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(obj, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(json.dumps(obj, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
 
 
 def sha256_file(path: Path) -> str:
@@ -90,6 +96,13 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def clip_png_name(image_id: str) -> str:
+    """Give every image ID a stable, Windows-safe output name."""
+    stem = re.sub(r"[^A-Za-z0-9_.-]", "_", image_id).strip("._")[:80] or "image"
+    digest = hashlib.sha256(image_id.encode("utf-8")).hexdigest()[:16]
+    return f"{stem}-{digest}.png"
 
 
 def dhash(image, hash_size: int = 8) -> int:

@@ -1,0 +1,23 @@
+{
+  "archive_sha256_recorded_but_not_rechecked": "51d42248d2cd212e8c3446366d8def0d575d49f8bd7ad89e4fddaf41b2d33369",
+  "evidence_basis": "Derived from repository sources.csv, metadata.csv and committed image files",
+  "limitations": [
+    "Original provider export archive is not preserved in this repository.",
+    "Original provider README is not preserved in this repository.",
+    "The recorded archive SHA-256 cannot be rechecked without that archive.",
+    "This summary is not evidence of a completed second human label review."
+  ],
+  "review_status_counts": {
+    "initial_screen_kept_second_human_review_pending": 28
+  },
+  "selected_image_count": 28,
+  "selected_image_hashes_verified_against_manifest": 28,
+  "selected_images_by_dish": {
+    "chicken_pulao": 28
+  },
+  "source_id": "RF_NSN",
+  "source_name": "Bangladeshi Food Classification2 / NSN",
+  "source_url": "https://universe.roboflow.com/nsn/bangladeshi-food-classification2",
+  "uploader_stated_license": "CC BY 4.0 (provider README and project page)",
+  "version_url": "https://universe.roboflow.com/nsn/bangladeshi-food-classification2/dataset/1"
+}

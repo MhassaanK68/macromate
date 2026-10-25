@@ -154,9 +154,9 @@ def main() -> None:
     sources = read_csv(sources_path(), ["source_id"])
     source_ids = {r["source_id"].strip() for r in sources if r["source_id"]}
     nutrition_clean, nutrition_report = check_nutrition()
-    if nutrition_clean:
-        write_csv(PROCESSED / "nutrition_clean.csv",
-                  list(nutrition_clean[0].keys()), nutrition_clean)
+    nutrition_output_fields = ["dish_label", "label_id", *NUTRITION_FIELDS,
+                               "source", "recipe_assumptions"]
+    write_csv(PROCESSED / "nutrition_clean.csv", nutrition_output_fields, nutrition_clean)
 
     decisions_path = DATA / "review_decisions.csv"
     decisions = {}
@@ -166,6 +166,9 @@ def main() -> None:
                 decisions[r["image_id"].strip()] = (r["reason"] or "").strip()
 
     if not rows:
+        for name in ("metadata_clean.csv", "image_features.csv", "exclusions.csv",
+                     "near_duplicate_pairs.csv", "outlier_flags.csv", "cleaning_summary.json"):
+            (PROCESSED / name).unlink(missing_ok=True)
         print("No image records yet. Add licensed images and metadata before cleaning.")
         print(f"Nutrition rows: {nutrition_report['rows']} "
               f"(valid: {nutrition_report['valid_rows']})")
@@ -204,6 +207,10 @@ def main() -> None:
                     info = read_image_info(path)
                 except (OSError, UnidentifiedImageError, ValueError, SyntaxError):
                     reason = "unreadable image file"
+                else:
+                    recorded_hash = (row.get("sha256") or "").strip().lower()
+                    if recorded_hash and recorded_hash != info["sha256"]:
+                        reason = "image SHA-256 does not match metadata"
         # Photos derived from the same original (augmentations) share source_photo_group;
         # they get one group_id so the split keeps them in the same subset.
         group_id = (row.get("group_id") or "").strip()

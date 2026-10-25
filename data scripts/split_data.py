@@ -44,10 +44,14 @@ class UnionFind:
 def main() -> None:
     clean_path = PROCESSED / "metadata_clean.csv"
     if not clean_path.exists():
+        for name in ("split.csv", "split_summary.json"):
+            (PROCESSED / name).unlink(missing_ok=True)
         print("data/processed/metadata_clean.csv not found. Run clean_data.py first.")
         return
     rows = read_csv(clean_path, ["image_id", "local_path", "dish_label"])
     if not rows:
+        for name in ("split.csv", "split_summary.json"):
+            (PROCESSED / name).unlink(missing_ok=True)
         print("No clean images to split.")
         return
     rows.sort(key=lambda r: r["image_id"])
