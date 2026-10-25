@@ -22,6 +22,7 @@ from collections import Counter
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.ticker  # noqa: E402,F401
 import numpy as np  # noqa: E402
 from PIL import Image, ImageOps  # noqa: E402
 
@@ -65,8 +66,11 @@ def main() -> None:
         ax.bar_label(b2, fontsize=8)
     ax.bar_label(b1, fontsize=8)
     ax.set_xticks(x, [SHORT[l] for l in LABELS], rotation=20)
-    ax.set_ylabel("images"); ax.set_title(f"Images per dish (raw n={len(raw)}; {blank} with blank/ambiguous label not shown)")
-    ax.legend(); save(fig, "raw_class_counts.png")
+    ax.set_ylabel("images")
+    note = f"; {blank} with blank label not shown" if blank else ""
+    ax.set_title(f"Images per dish (raw n={len(raw)}{note})")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=2, frameon=False)
+    save(fig, "raw_class_counts.png")
 
     # 2. missing data -------------------------------------------------------
     cols = ["image_id", "local_path", "dish_label", "source_id", "notes"]
@@ -74,6 +78,8 @@ def main() -> None:
     fig, ax = plt.subplots(figsize=(6.5, 3.5))
     bars = ax.bar(cols, miss, color="#c0504d")
     ax.bar_label(bars); ax.set_ylabel("rows with missing value")
+    ax.set_ylim(0, max(1, max(miss) * 1.2))
+    ax.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
     ax.set_title("Missing values per metadata column (raw)")
     ax.tick_params(axis="x", rotation=20); save(fig, "missing_data.png")
 
@@ -96,7 +102,7 @@ def main() -> None:
                     ax.imshow(im)
             if j == 0:
                 ax.set_title(label, fontsize=8, loc="left")
-    fig.suptitle("Sample photos per dish (evenly spaced picks)", y=1.0, fontsize=10)
+    fig.subplots_adjust(hspace=0.3)
     save(fig, "sample_images.png")
 
     # 4. size distributions -------------------------------------------------
@@ -105,8 +111,13 @@ def main() -> None:
         asp = np.array([float(f["aspect_ratio"]) for f in feats])
         kb = np.array([float(f["file_bytes"]) for f in feats]) / 1024
         fig, axs = plt.subplots(1, 3, figsize=(13, 3.8))
-        axs[0].scatter(wd, ht, s=8, alpha=0.5, color="#2f6f9f")
+        pts = Counter(zip(wd.tolist(), ht.tolist()))
+        axs[0].scatter([p[0] for p in pts], [p[1] for p in pts], s=[30 + 3 * c for c in pts.values()],
+                       alpha=0.6, color="#2f6f9f")
+        for (px, py), c in pts.items():
+            axs[0].annotate(f"{c} images", (px, py), textcoords="offset points", xytext=(6, 6), fontsize=8)
         axs[0].axvline(224, ls="--", c="gray", lw=0.8); axs[0].axhline(224, ls="--", c="gray", lw=0.8)
+        axs[0].margins(0.2)
         axs[0].set_xlabel("width (px)"); axs[0].set_ylabel("height (px)"); axs[0].set_title("Image dimensions")
         axs[1].hist(asp, bins=30, color="#2f6f9f"); axs[1].set_xlabel("long side / short side")
         axs[1].set_title("Aspect ratio")
@@ -117,8 +128,16 @@ def main() -> None:
         # 6. feature correlation --------------------------------------------
         names = ["width", "height", "aspect_ratio", "file_bytes", "brightness", "mean_r", "mean_g", "mean_b"]
         mat = np.array([[float(f[n]) for n in names] for f in feats])
-        if len(feats) > 2 and (mat.std(axis=0) > 0).all():
-            corr = np.corrcoef(mat, rowvar=False)
+        keep, seen_cols = [], []          # drop constant or duplicated columns (e.g. all-square images)
+        for k, n in enumerate(names):
+            col = mat[:, k]
+            if col.std() == 0 or any(np.array_equal(col, c) for c in seen_cols):
+                print(f"  (feature_correlation: '{n}' left out, constant or identical to another column)")
+                continue
+            keep.append(k); seen_cols.append(col)
+        if len(feats) > 2 and len(keep) >= 2:
+            names = [names[k] for k in keep]
+            corr = np.corrcoef(mat[:, keep], rowvar=False)
             fig, ax = plt.subplots(figsize=(6.5, 5.5))
             im = ax.imshow(corr, vmin=-1, vmax=1, cmap="RdBu_r")
             ax.set_xticks(range(len(names)), names, rotation=45, ha="right"); ax.set_yticks(range(len(names)), names)
@@ -135,7 +154,8 @@ def main() -> None:
         vals = np.array([sum(1 for r in clean if r["dish_label"] == l and r["source_id"] == s) for l in LABELS])
         ax.bar(range(len(LABELS)), vals, bottom=bottom, label=s); bottom += vals
     ax.set_xticks(range(len(LABELS)), [SHORT[l] for l in LABELS], rotation=20)
-    ax.set_ylabel("clean images"); ax.set_title("Image source per dish"); ax.legend(fontsize=8)
+    ax.set_ylabel("clean images"); ax.set_title("Image source per dish")
+    ax.legend(fontsize=8, loc="upper left", bbox_to_anchor=(1.01, 1.0))
     save(fig, "class_by_source.png")
 
     # 7. split distribution -------------------------------------------------

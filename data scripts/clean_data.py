@@ -151,7 +151,7 @@ def quartile_fences(values: list[float]) -> tuple[float, float] | None:
 
 def main() -> None:
     rows = read_csv(DATA / "metadata.csv", METADATA_FIELDS)
-    sources = read_csv(sources_path(), ["source_id", "url"])
+    sources = read_csv(sources_path(), ["source_id"])
     source_ids = {r["source_id"].strip() for r in sources if r["source_id"]}
     nutrition_clean, nutrition_report = check_nutrition()
     if nutrition_clean:
@@ -204,6 +204,16 @@ def main() -> None:
                     info = read_image_info(path)
                 except (OSError, UnidentifiedImageError, ValueError, SyntaxError):
                     reason = "unreadable image file"
+        # Photos derived from the same original (augmentations) share source_photo_group;
+        # they get one group_id so the split keeps them in the same subset.
+        group_id = (row.get("group_id") or "").strip()
+        if not group_id and (row.get("source_photo_group") or "").strip():
+            group_id = f"{source_id}:{row['source_photo_group'].strip()}"
+        # Rights: Section 3 format has rights_status; the Roboflow format has a license column.
+        license_text = (row.get("license") or "").strip()
+        rights_status = (row.get("rights_status") or "").strip() or (
+            f"license_recorded: {license_text}" if license_text else "")
+        rights_cleared = rights_status == RIGHTS_OK or bool(license_text)
         if image_id:
             seen_ids.add(image_id)
         if reason:
@@ -212,9 +222,9 @@ def main() -> None:
             continue
         kept.append({"image_id": image_id, "local_path": local_path, "dish_label": label,
                      "source_id": source_id, "notes": (row.get("notes") or "").strip(),
-                     "group_id": (row.get("group_id") or "").strip(),
-                     "rights_status": (row.get("rights_status") or "").strip(),
-                     "rights_cleared": (row.get("rights_status") or "").strip() == RIGHTS_OK,
+                     "group_id": group_id,
+                     "rights_status": rights_status,
+                     "rights_cleared": rights_cleared,
                      **info})
 
     # ---- 4.2a exact duplicates (identical bytes) ---------------------------
