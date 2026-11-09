@@ -1,1 +1,1 @@
-"""Macromate's Phase 3 CLIP engine."""
+"""Macromate's CLIP training, evaluation, and inference package."""

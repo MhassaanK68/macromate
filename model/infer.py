@@ -5,7 +5,7 @@ import json
 
 import torch
 
-from .checkpoint import load_checkpoint
+from .clip_classifier import load_checkpoint
 from .data import image_tensor
 
 
@@ -24,7 +24,7 @@ class Recognizer:
         return {"scores_are_calibrated": False, "score_description": "Softmax ranking over eight supported dishes",
                 "ranked_dishes": [{"label_id": i, "dish": self.model.labels[i],
                                    "logit": float(logits[i]), "score": float(scores[i])}
-                                  for i in logits.argsort(descending=True).tolist()]}
+                                  for i in logits.argsort(descending=True, stable=True).tolist()]}
 
 
 def main():

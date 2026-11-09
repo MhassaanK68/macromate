@@ -1,6 +1,7 @@
-"""Plain PyTorch training; only train and validation loaders are available."""
+"""Train and verify CLIP checkpoints using only training and validation images."""
 
 import argparse
+from collections import Counter
 import math
 import os
 import platform
@@ -12,11 +13,14 @@ from pathlib import Path
 import numpy as np
 import torch
 from torch import nn
+from torch.utils.data import DataLoader
 
-from .checkpoint import save_checkpoint, read_checkpoint, apply_checkpoint
-from .clip_classifier import load_pretrained
-from .config import DEFAULTS, RUNS, write_json
-from .data import load_records, make_loaders, data_lineage
+from .clip_classifier import load_pretrained, save_checkpoint
+from .config import (DEFAULTS, ROOT, RUNS, REVISION, CHECKPOINT, EVIDENCE, FORMAT_VERSION,
+                     preprocessing, prompts_for, sha256, write_json, code_hashes, portable_path,
+                     read_record, reserve_record, resolve_checkpoint, timestamp)
+from .data import load_records, make_loaders, data_lineage, read_unique, DishDataset, image_tensor
+from .infer import Recognizer
 from .metrics import summarize, selection_key
 
 
@@ -106,82 +110,159 @@ def run_epoch(model, loader, device, optimizer=None, scheduler=None, gradient_cl
     return summarize(logits, labels, loss_sum), logits, labels, all_ids
 
 
-def train_run(settings, output, device="cpu", records=None, labels=None, lineage=None):
+def train_run(settings, output, device="cpu", evidence=EVIDENCE):
     settings = dict(DEFAULTS, **settings)
     if not 1 <= settings["epochs"] <= 20 or settings["batch_size"] < 1 or settings["patience"] < 1:
         raise ValueError("Use 1..20 epochs and positive batch size/patience")
     if min(settings["block_lr"], settings["projection_lr"]) <= 0 or settings["weight_decay"] < 0:
         raise ValueError("Learning rates must be positive and decay nonnegative")
     if settings["dropout"] != 0:
-        raise ValueError("Phase 3 fixes pretrained dropout at zero")
-    output = Path(output)
+        raise ValueError("Pretrained dropout is fixed at zero")
+    output, evidence = Path(output), Path(evidence)
     if output.exists() and any(output.iterdir()):
         raise ValueError(f"Refusing to overwrite existing run: {output}")
-    output.mkdir(parents=True, exist_ok=True)
-    seed_everything(settings["seed"])
-    if records is None:
-        records, labels = load_records()
-    if lineage is None:
-        lineage = data_lineage(records)
-    train, val = make_loaders(records, settings["batch_size"], settings["seed"])
-    model = load_pretrained(labels, device)
-    inventory = model.trainable_inventory()
-    env = environment(device)
-    write_json(output / "setup.json", {"settings": settings, "environment": env,
-                                       "trainable_inventory": inventory, "trainable_count": sum(inventory.values())})
-    optimizer = make_optimizer(model, settings)
-    scheduler = make_scheduler(optimizer, len(train) * settings["epochs"], settings["warmup_fraction"])
-    history, best, best_epoch, stale = [], None, None, 0
-    start = time.perf_counter()
-    for epoch in range(1, settings["epochs"] + 1):
-        epoch_start = time.perf_counter()
-        rates = [group["lr"] for group in optimizer.param_groups]
-        train_metrics, _, _, _ = run_epoch(model, train, device, optimizer, scheduler, settings["gradient_clip"])
-        val_metrics, logits, targets, ids = run_epoch(model, val, device)
-        history.append({"epoch": epoch, "train": train_metrics, "validation": val_metrics,
-                        "learning_rates_at_start": rates, "seconds": time.perf_counter() - epoch_start})
-        write_json(output / "history.json", history)
-        print(f"{output.name} epoch {epoch}: train loss {train_metrics['loss']:.4f}; "
-              f"val {val_metrics['top1_correct']}/{val_metrics['total']}, loss {val_metrics['loss']:.4f}", flush=True)
-        if best is None or selection_key(val_metrics) > selection_key(best):
-            best, best_epoch, stale = val_metrics, epoch, 0
-            save_checkpoint(output / "best.pt", model, {
-                "settings": settings, "lineage": lineage, "environment": env,
-                "epoch": epoch, "validation": best,
-            })
-            write_json(output / "best_validation_predictions.json", {
-                "image_ids": ids, "label_ids": targets.tolist(), "logits": logits.tolist()})
-        else:
-            stale += 1
-        if stale >= settings["patience"]:
-            break
-    apply_checkpoint(model, read_checkpoint(output / "best.pt"))
-    reloaded_metrics, reloaded_logits, _, reloaded_ids = run_epoch(model, val, device)
-    import json
-    saved = json.loads((output / "best_validation_predictions.json").read_text(encoding="utf-8"))
-    saved_logits = torch.tensor(saved["logits"])
-    max_error = float((saved_logits - reloaded_logits).abs().max())
-    if saved["image_ids"] != reloaded_ids or not torch.allclose(saved_logits, reloaded_logits, atol=1e-6, rtol=0):
-        raise ValueError(f"Checkpoint reload prediction mismatch: max error {max_error}")
-    result = {"settings": settings, "environment": env, "epochs_completed": len(history),
-              "best_epoch": best_epoch, "validation": reloaded_metrics,
-              "seconds": time.perf_counter() - start, "reload_max_error": max_error,
-              "trainable_count": sum(inventory.values()), "status": "completed"}
-    write_json(output / "result.json", result)
+    if any((evidence / name).exists() for name in ("training.json", "evaluation.json", "predictions.csv")):
+        raise ValueError("Experiment already exists; choose fresh run and evidence directories")
+    records, labels = load_records()
+    lineage = data_lineage(records)
+    weights = RUNS / "hub" / "models--openai--clip-vit-base-patch32" / "snapshots" / REVISION / "pytorch_model.bin"
+    training = {
+        "format_version": FORMAT_VERSION, "status": "started", "started_at_utc": timestamp(),
+        "settings": settings, "labels": labels, "prompts": prompts_for(labels),
+        "preprocessing": preprocessing(), "lineage": lineage,
+        "base_model": {"name": CHECKPOINT, "revision": REVISION, "sha256": sha256(weights)},
+        "counts": dict(Counter(r["split"] for r in records)),
+        "selection": "Highest validation top1 count, then lower loss, then earlier epoch",
+        "code_sha256": code_hashes(), "checkpoint": {"path": portable_path(output / "best.pt")},
+        "history": [], "verification": None,
+    }
+    record_path = evidence / "training.json"
+    reserve_record(record_path, training)
+    try:
+        output.mkdir(parents=True, exist_ok=True)
+        seed_everything(settings["seed"])
+        train, val = make_loaders(records, settings["batch_size"], settings["seed"])
+        model = load_pretrained(labels, device)
+        inventory = model.trainable_inventory()
+        env = environment(device)
+        training.update(environment=env, trainable_inventory=inventory, trainable_count=sum(inventory.values()))
+        write_json(record_path, training)
+        optimizer = make_optimizer(model, settings)
+        scheduler = make_scheduler(optimizer, len(train) * settings["epochs"], settings["warmup_fraction"])
+        best, best_epoch, stale = None, None, 0
+        start = time.perf_counter()
+        for epoch in range(1, settings["epochs"] + 1):
+            epoch_start = time.perf_counter()
+            rates = [group["lr"] for group in optimizer.param_groups]
+            train_metrics, _, _, _ = run_epoch(model, train, device, optimizer, scheduler, settings["gradient_clip"])
+            val_metrics, logits, targets, ids = run_epoch(model, val, device)
+            training["history"].append({"epoch": epoch, "train": train_metrics, "validation": val_metrics,
+                                        "learning_rates_at_start": rates, "seconds": time.perf_counter() - epoch_start})
+            print(f"{output.name} epoch {epoch}: train loss {train_metrics['loss']:.4f}; "
+                  f"val {val_metrics['top1_correct']}/{val_metrics['total']}, loss {val_metrics['loss']:.4f}", flush=True)
+            if best is None or selection_key(val_metrics) > selection_key(best):
+                best, best_epoch, stale = val_metrics, epoch, 0
+                save_checkpoint(output / "best.pt", model, {
+                    "settings": settings, "lineage": lineage, "environment": env,
+                    "epoch": epoch, "validation": best,
+                })
+                training["validation_predictions"] = {
+                    "image_ids": ids, "label_ids": targets.tolist(), "logits": logits.tolist()}
+            else:
+                stale += 1
+            write_json(record_path, training)
+            if stale >= settings["patience"]:
+                break
+        training["result"] = {"epochs_completed": len(training["history"]), "best_epoch": best_epoch,
+                              "validation": best, "seconds": time.perf_counter() - start}
+        training["checkpoint"]["sha256"] = sha256(output / "best.pt")
+        training["status"] = "trained"
+        write_json(record_path, training)
+        # Reconstruct from the saved checkpoint; keep GPU memory free for verification.
+        del model, optimizer, scheduler
+        verification = verify(evidence, device)
+        training = read_record(record_path)
+        training["result"]["reload_max_error"] = verification["reload_max_error"]
+        training.update(status="completed", finished_at_utc=timestamp())
+        write_json(record_path, training)
+        return training
+    except Exception as error:
+        training = read_record(record_path)
+        training.update(status="failed", failure={"at_utc": timestamp(), "error": repr(error)})
+        write_json(record_path, training)
+        raise
+
+
+def verify(evidence=EVIDENCE, device="cpu"):
+    evidence = Path(evidence)
+    training = read_record(evidence / "training.json")
+    if training["status"] not in ("trained", "completed"):
+        raise ValueError("Training has not completed")
+    torch.set_num_threads(4)
+    records, labels = load_records()
+    checkpoint = resolve_checkpoint(training)
+    if sha256(checkpoint) != training["checkpoint"]["sha256"]:
+        raise ValueError("Checkpoint hash differs from training record")
+    recognizer = Recognizer(checkpoint, device)
+    payload = recognizer.checkpoint
+    if (payload["labels"] != labels or labels != training["labels"]
+            or payload["metadata"]["lineage"] != data_lineage(records)
+            or training["lineage"] != data_lineage(records)
+            or payload["metadata"]["settings"] != training["settings"]
+            or payload["metadata"]["epoch"] != training["result"]["best_epoch"]):
+        raise ValueError("Checkpoint no longer matches data")
+    saved = training["validation_predictions"]
+    loader = DataLoader(DishDataset(records, "val"), batch_size=payload["metadata"]["settings"]["batch_size"], num_workers=0)
+    rows, ids, targets = [], [], []
+    with torch.inference_mode():
+        for pixels, truth, image_ids in loader:
+            rows.append(recognizer.model(pixels.to(device)).cpu())
+            ids.extend(image_ids)
+            targets.extend(truth.tolist())
+    logits = torch.cat(rows)
+    expected = torch.tensor(saved["logits"])
+    same_device = payload["metadata"]["environment"]["device"] == device
+    tolerance = 1e-6 if same_device else 1e-4
+    if (ids != saved["image_ids"] or targets != saved["label_ids"]
+            or not torch.allclose(logits, expected, atol=tolerance, rtol=0)):
+        raise ValueError("Fresh-process validation predictions do not reproduce saved best epoch")
+    metadata = read_unique(ROOT / "data" / "metadata.csv", ["image_id", "local_path"])
+    sample = next(r for r in records if r["image_id"] == ids[0])
+    original = ROOT / metadata[ids[0]]["local_path"]
+    if not torch.equal(image_tensor(original, prepared=False), image_tensor(sample["path"])):
+        raise ValueError("Upload preprocessing differs from prepared input")
+    prediction = recognizer.predict(original)
+    if prediction["ranked_dishes"][0]["label_id"] != int(logits[0].argmax()):
+        raise ValueError("App prediction disagrees with validation")
+    result = {"status": "passed", "checkpoint_sha256": sha256(checkpoint), "device": device,
+              "validation_images": len(ids), "reload_max_error": float((logits - expected).abs().max()),
+              "absolute_tolerance": tolerance, "test_pixels_decoded": False,
+              "sample_image_id": ids[0], "original_photo": str(original.relative_to(ROOT)),
+              "sample_prediction": prediction}
+    result["checked_at_utc"] = timestamp()
+    training["verification"] = result
+    write_json(evidence / "training.json", training)
+    print(f"Verified {len(ids)} validation rows and original-photo app inference; max error {result['reload_max_error']}")
     return result
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, help="Selected settings JSON from the pilot")
+    parser.add_argument("--config", type=Path, help="Optional settings JSON; defaults are the selected pilot settings")
     parser.add_argument("--output", type=Path, default=RUNS / "phase4")
+    parser.add_argument("--evidence", type=Path, default=EVIDENCE)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
-    parser.add_argument("--epochs", type=int, default=20)
+    parser.add_argument("--epochs", type=int, help="Override the configured epoch cap (1..20)")
+    parser.add_argument("--verify-only", action="store_true", help="Check an existing checkpoint without training")
     args = parser.parse_args()
+    if args.verify_only:
+        verify(args.evidence, args.device)
+        return
     import json
     settings = json.loads(args.config.read_text(encoding="utf-8")) if args.config else {}
-    settings["epochs"] = args.epochs
-    train_run(settings, args.output, args.device)
+    if args.epochs is not None:
+        settings["epochs"] = args.epochs
+    train_run(settings, args.output, args.device, args.evidence)
 
 
 if __name__ == "__main__":

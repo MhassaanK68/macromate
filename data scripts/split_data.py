@@ -6,7 +6,7 @@
   and photos of the same physical plate cannot leak between train and test.
   "Together" = near-duplicate pairs from clean_data.py, plus any images that
   share a value in the optional `group_id` column of data/metadata.csv.
-* The test split is reserved for the final zero-shot vs fine-tuned comparison.
+* The test split is reserved for evaluating the selected fine-tuned model.
 
 Run after clean_data.py:  python "data scripts/split_data.py"
 """
@@ -138,7 +138,7 @@ def main() -> None:
             "min_hash_distance_across_splits_bits": min_dist,
             "class_split_cells_that_are_empty": empty,
         },
-        "note": "Test split is reserved for the final zero-shot vs fine-tuned CLIP comparison.",
+        "note": "Test split is reserved for evaluating the selected fine-tuned CLIP model.",
     }
     write_json(PROCESSED / "split_summary.json", summary)
     t = summary["split_totals"]

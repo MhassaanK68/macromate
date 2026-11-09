@@ -1,12 +1,77 @@
-"""Validate Phase 2 records; pilot loaders never open reserved test photos."""
+"""Dataset validation, image preprocessing, and train/validation loaders."""
+
+import csv
+from collections import Counter
+from pathlib import Path
 
 import numpy as np
 import torch
 from PIL import Image, ImageOps
 from torch.utils.data import Dataset, DataLoader
 
-from .config import SIZE, MEAN, STD
-from .contracts import load_records, data_lineage
+from .config import ROOT, PROCESSED, SIZE, MEAN, STD, read_labels, sha256
+
+
+def read_unique(path, fields):
+    with Path(path).open(newline="", encoding="utf-8-sig") as handle:
+        reader = csv.DictReader(handle)
+        if not set(fields).issubset(reader.fieldnames or []):
+            raise ValueError(f"Missing columns in {path}: {fields}")
+        rows = list(reader)
+    result = {}
+    for row in rows:
+        image_id = row["image_id"]
+        if not image_id or image_id in result:
+            raise ValueError(f"Empty or duplicate image_id in {path}: {image_id}")
+        result[image_id] = row
+    return result
+
+
+def load_records(processed=PROCESSED, root=ROOT, expected_counts=True):
+    processed, root = Path(processed), Path(root).resolve()
+    labels = read_labels(processed / "label_map.json")
+    manifest = read_unique(processed / "clip_manifest.csv",
+                           ["image_id", "dish_label", "label_id", "clip_path"])
+    splits = read_unique(processed / "split.csv",
+                         ["image_id", "dish_label", "label_id", "split", "cluster_id"])
+    if set(manifest) != set(splits):
+        raise ValueError("Manifest and split image IDs do not match")
+    records, groups, paths = [], {}, set()
+    for image_id in sorted(manifest):
+        row, split = manifest[image_id], splits[image_id]
+        if row["dish_label"] != split["dish_label"] or row["label_id"] != split["label_id"]:
+            raise ValueError(f"Label mismatch for {image_id}")
+        label_id = int(row["label_id"])
+        if not 0 <= label_id < 8 or labels[label_id] != row["dish_label"]:
+            raise ValueError(f"Label ID disagrees with label_map for {image_id}")
+        subset = split["split"]
+        if subset not in ("train", "val", "test"):
+            raise ValueError(f"Unknown split for {image_id}: {subset}")
+        group = split["cluster_id"]
+        if not group or groups.get(group, subset) != subset:
+            raise ValueError(f"Empty group or group crosses splits: {group}")
+        groups[group] = subset
+        path = (root / row["clip_path"]).resolve()
+        if not path.is_relative_to(root) or not path.is_file() or path in paths:
+            raise ValueError(f"Invalid, missing or reused prepared path: {path}")
+        paths.add(path)
+        records.append(dict(row, split=subset, path=path, label_id=label_id))
+    counts = Counter((r["split"], r["label_id"]) for r in records)
+    if expected_counts:
+        expected = {(s, i): count for s, count in [("train", 35), ("val", 8), ("test", 7)]
+                    for i in range(8)}
+        if dict(counts) != expected:
+            raise ValueError(f"Expected 35/8/7 per dish; found {dict(counts)}")
+    return records, labels
+
+
+def data_lineage(records, processed=PROCESSED):
+    files = {name: sha256(Path(processed) / name) for name in
+             ("clip_manifest.csv", "split.csv", "label_map.json")}
+    # Hash only training/validation pixels. Test paths are checked, never decoded.
+    files["train_val_pixels"] = {r["image_id"]: sha256(r["path"])
+                                  for r in records if r["split"] != "test"}
+    return files
 
 
 def image_tensor(path, prepared=True):
@@ -32,7 +97,7 @@ def image_tensor(path, prepared=True):
 class DishDataset(Dataset):
     def __init__(self, records, split):
         if split not in ("train", "val"):
-            raise ValueError("Phase 3 datasets permit train or val only; test is reserved")
+            raise ValueError("Training datasets permit train or val only; test is reserved")
         self.records = [r for r in records if r["split"] == split]
         if not self.records:
             raise ValueError(f"No records for {split}")
@@ -51,5 +116,3 @@ def make_loaders(records, batch_size, seed):
                        shuffle=True, generator=generator, num_workers=0)
     val = DataLoader(DishDataset(records, "val"), batch_size=batch_size, num_workers=0)
     return train, val
-
-

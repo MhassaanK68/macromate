@@ -1,7 +1,0 @@
-run_id,status,block_lr,projection_lr,batch_size,weight_decay,dropout,epochs_completed,best_epoch,val_correct,val_total,val_loss,seconds
-baseline,completed,1e-05,5e-05,8,0.01,0.0,2,2,58,64,0.29452942591160536,7.734415499999159
-block_low,completed,5e-06,5e-05,8,0.01,0.0,2,2,57,64,0.30772874457761645,6.7790142000012565
-block_high,completed,2e-05,5e-05,8,0.01,0.0,2,2,58,64,0.2824557083658874,6.781345800000054
-projection_low,completed,1e-05,2e-05,8,0.01,0.0,2,2,57,64,0.3023558733984828,6.834036400001423
-batch_16,completed,1e-05,5e-05,16,0.01,0.0,2,1,57,64,0.3445461541414261,5.988792099999046
-no_decay,completed,1e-05,5e-05,8,0.0,0.0,2,2,58,64,0.294530319981277,6.805115000001024

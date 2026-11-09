@@ -7,7 +7,7 @@ They do not substitute for the original provider exports or their README files.
 from collections import Counter
 import re
 
-from common import DATA, ROOT, read_csv, sha256_file, write_json
+from common import DATA, ROOT, PROCESSED, read_csv, sha256_file, write_json
 
 
 def main() -> None:
@@ -26,7 +26,7 @@ def main() -> None:
     source_ids = {row["source_id"] for row in sources}
     if len(source_ids) != len(sources) or any(not re.fullmatch(r"[A-Za-z0-9_-]+", sid)
                                               for sid in source_ids):
-        raise RuntimeError("Source IDs must be unique and safe for evidence filenames")
+        raise RuntimeError("Source IDs must be unique and safe for audit filenames")
     unknown = sorted(set(by_source) - source_ids)
     if unknown:
         raise RuntimeError(f"Image records have unknown source IDs: {', '.join(unknown)}")
@@ -63,16 +63,16 @@ def main() -> None:
             ],
         }
 
-    evidence = ROOT / "evidence"
+    audit_dir = PROCESSED / "source_audits"
     wanted = {f"{source_id}_summary.json" for source_id in summaries}
-    if evidence.exists():
-        for old in evidence.glob("*_summary.json"):
+    if audit_dir.exists():
+        for old in audit_dir.glob("*_summary.json"):
             if old.name not in wanted:
                 old.unlink()
     for source_id, summary in summaries.items():
-        write_json(evidence / f"{source_id}_summary.json", summary)
+        write_json(audit_dir / f"{source_id}_summary.json", summary)
     print(f"Verified {len(images)} selected image hashes across {len(sources)} sources.")
-    print("Wrote repository-derived summaries to evidence/.")
+    print("Wrote repository-derived summaries to data/processed/source_audits/.")
 
 
 if __name__ == "__main__":

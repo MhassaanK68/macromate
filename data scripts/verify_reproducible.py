@@ -32,10 +32,10 @@ def run_all() -> dict[str, str]:
     paths.update({f"figures/{name}": FIGURES / name for name in GENERATED_FIGURES})
     with (DATA / "sources.csv").open(newline="", encoding="utf-8-sig") as handle:
         source_ids = {row["source_id"] for row in csv.DictReader(handle)}
-    evidence_paths = {ROOT / "evidence" / f"{sid}_summary.json" for sid in source_ids}
-    if set((ROOT / "evidence").glob("*_summary.json")) != evidence_paths:
-        raise RuntimeError("Evidence summaries do not match the source manifest")
-    paths.update({path.relative_to(ROOT).as_posix(): path for path in evidence_paths})
+    audit_paths = {PROCESSED / "source_audits" / f"{sid}_summary.json" for sid in source_ids}
+    if set((PROCESSED / "source_audits").glob("*_summary.json")) != audit_paths:
+        raise RuntimeError("Source audit summaries do not match the source manifest")
+    paths.update({path.relative_to(ROOT).as_posix(): path for path in audit_paths})
     missing = [name for name, path in paths.items() if not path.is_file()]
     if missing:
         raise RuntimeError(f"Pipeline did not create required outputs: {', '.join(missing)}")

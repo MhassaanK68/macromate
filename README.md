@@ -1,208 +1,320 @@
 # Macromate
 
-Macromate is an academic prototype for logging selected Pakistani foods from meal photos. A user uploads a photo of one main dish, reviews the suggested label, enters the serving size in grams, and receives estimated calories and macronutrients. A daily log and simple goal-based messages are planned for later phases.
+**Recognition of eight Pakistani dish categories from photos using a partially fine-tuned CLIP model.**
 
-## Team
+Macromate is an academic prototype for a meal-logging application. This repository prepares the image dataset, trains and tests the recognizer, saves its weights, and runs predictions on new photos. The intended application lets users confirm a suggested dish and enter serving grams before calculating nutrition from a separate per-100-g reference.
 
-| Member | Roll number | Deliverable 1 responsibility |
-| --- | --- | --- |
-| Hassan Mehmood | 24L-2559 | Technical lead, repository structure, CLIP input and data split plan, LaTeX report integration, final checks |
-| Mohid Israr | 24L-2510 | Image acquisition, source records, dish definitions, image labels |
-| Adnan Zaka | 24i-2537 | Data cleaning, nutrition references, exploratory charts |
+**Implemented:** data preparation, training, checkpoint verification, held-out evaluation, reports, and CLI/Python inference. The graphical interface, serving-size workflow, nutrition integration, and daily log remain future work. There is no web server to launch.
 
-Each member should make substantive commits under their own GitHub account. The repository history now includes commits from all three members.
+## Contents
 
-## Problem and AI approach
+- [The simple workflow](#the-simple-workflow)
+- [Run on your laptop](#run-on-your-laptop)
+- [How the model is built](#how-the-model-is-built)
+- [Train, test, and report](#train-test-and-report)
+- [Run the final model](#run-the-final-model)
+- [Results](#results)
+- [Files and code](#files-and-code)
+- [Troubleshooting](#troubleshooting)
+- [Data and limitations](#data-and-limitations)
+- [Team and guides](#team-and-guides)
 
-Pakistani dishes vary in recipe and appearance. Fixed rules based on colour or shape are unlikely to recognize them reliably from photos. The Phase 3 engine partially fine-tunes CLIP's image encoder while keeping its text encoder fixed. Phase 4 will fully train the selected configuration and evaluate this single recognizer on reserved test photos, including top-1/top-3 accuracy, precision, recall, F1, ROC-AUC and error analysis. The earlier proposal's two-model comparison has been superseded by the Phase 3 and Phase 4 implementation documents.
-
-The initial labels are **chicken biryani, chicken pulao, chicken karahi, daal, nihari, haleem, samosa, and chapati**. This list may change after a data audit. The model suggests a dish; the user confirms or corrects it. Nutrition is a separate calculation based on a documented value per 100 g and the user's entered serving weight. It is an estimate, not medical advice.
-
-## Repository layout
+## The simple workflow
 
 ```text
-Macromate_Project_Proposal.pdf  Approved project direction
-README.md                       Project setup and status
-.gitignore                      Excludes generated data, environments and build files
-requirements.txt                Dependencies for current data scripts
-data scripts/                   Phase 2 Python scripts (folder name required by handout)
-data/review_decisions.csv       Manual near-duplicate review decisions (currently none needed)
-evidence/                       Repository-derived source audit summaries
-data/metadata.csv               Image manifest: 400 images, source, license, original file
-data/nutrition.csv              Nutrition per 100 g for 8 dishes, with source and recipe assumptions
-data/sources.csv                Dataset/source provenance for four sources
-data/images/                    400 committed images, one folder per dish
-data/processed/                 Generated cleaned data (ignored by Git)
-figures/                        Report figures generated from the current data
-report/main.tex                 Data preparation and Phase 3 technical report
-report/phase3.tex               Phase 3 section exported from measured pilot evidence
-report/main.pdf                 Compiled technical report
-model/                          CLIP recognizer, trainer, pilot and inference modules
-requirements-model.txt          Tested model dependencies
-tests/                          Data and model contract tests
-runs/                           Local model cache, weights and histories (ignored)
+Prepared photos -> train -> best.pt + training.json
+                           |
+                           v
+                        evaluate -> predictions.csv + evaluation.json
+                                         |
+                                         v
+                                       report
+
+New meal photo + best.pt + pretrained CLIP cache -> eight ranked dishes
 ```
 
-## Phase 3 model engine
+The active `evidence/` folder contains exactly three files:
 
-**Phase 3 is complete:** all 16 contract tests pass, all six two-epoch GPU pilots
-completed, and independent checkpoint loading reproduced all 64 validation logit
-rows exactly. The selected candidate reached **58/64 validation top-1** and
-**63/64 top-3**, with loss **0.282456**. These are exploratory pilot results;
-the 56 test photos remain reserved for Phase 4. See `docs/05_Phase_3_results.md`
-and `evidence/phase3/` for measured settings, histories and verification.
+- **`training.json`:** settings, labels, epoch history, selected epoch, validation predictions, checkpoint identity, and verification.
+- **`predictions.csv`:** one row per test photo, with the actual/predicted dish, complete class scores and rankings, and source attribution. List-valued cells use JSON so scores retain full precision.
+- **`evaluation.json`:** evaluation status and protocol, metrics, confusion matrix, subgroup results, error reviews, and final model details.
 
-Phase 3 uses PyTorch and Hugging Face Transformers with the pinned
-`openai/clip-vit-base-patch32` revision
-`3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268`. The execution design is in
-`docs/04_Phase_3_execution_plan.md`. The eight class IDs come directly from
-`data/processed/label_map.json`.
+The trained weights are stored separately at **`runs/phase4/best.pt`**. That adapted-weight checkpoint also needs the pinned pretrained base model in **`runs/hub/`**.
 
-The image tower is ViT-B/32 (12 blocks, width 768, 12 heads). The fixed text
-tower has 12 blocks, width 512 and 8 heads; both project to 512 dimensions.
-Only vision blocks 10 and 11, final vision layer normalization and visual
-projection train. Eight fixed `a photo of Pakistani [dish]` embeddings supply
-the classifier scores; no new classification head is added. Most pretrained
-features stay frozen because only 280 training photos are available.
+The existing model and results were consolidated without retraining or repeating test inference. Historical pilot selection and the evaluation correction remain under provenance in the three evidence files. The earlier historical archive is absent from this checkout; active model commands do not require it.
 
-Install Python 3.12, create/activate `.venv`, then install the pinned libraries:
+## Run on your laptop
+
+### 1. Clone and create an environment
+
+Use **Python 3.12** and Git. Initial installation and base-model download require internet access. Run all commands from the repository root.
+
+```sh
+git clone https://github.com/MhassaanK68/macromate.git
+cd macromate
+```
+
+Windows PowerShell:
 
 ```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+Linux/macOS:
+
+```sh
+python3.12 -m venv .venv
+source .venv/bin/activate
+```
+
+### 2. Install dependencies
+
+For a CPU laptop on Windows/Linux:
+
+```sh
+python -m pip install --upgrade pip
+python -m pip install torch==2.9.0 --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -r requirements-model.txt
+```
+
+For macOS, install `torch==2.9.0` from the default package index instead:
+
+```sh
+python -m pip install torch==2.9.0
+python -m pip install -r requirements-model.txt
+```
+
+For a supported NVIDIA GPU on Windows/Linux, use the tested CUDA wheel index instead of the CPU index:
+
+```sh
 python -m pip install torch==2.9.0 --index-url https://download.pytorch.org/whl/cu128
 python -m pip install -r requirements-model.txt
-# For a CPU-only environment, use https://download.pytorch.org/whl/cpu instead.
 ```
 
-Download the pinned base model once. It is cached inside ignored `runs/hub/`;
-model loading then works offline and uses only this revision:
+Check the environment:
 
-```powershell
-python -c "from huggingface_hub import snapshot_download; snapshot_download('openai/clip-vit-base-patch32', revision='3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268', cache_dir='runs/hub', allow_patterns=['*.json','*.txt','pytorch_model.bin'])"
-python -m unittest discover -s tests -v
-python -m model.pilot --epochs 2 --device cuda
-python -m model.verify --device cuda
+```sh
+python -c "import sys, torch; print(sys.version); print(torch.__version__); print('CUDA:', torch.cuda.is_available())"
+python -m pip check
+```
+
+The recorded experiment used Windows 11, Python 3.12.14, PyTorch 2.9.0+cu128, and an RTX 3050 Laptop GPU with 4 GB VRAM. CPU execution is supported; Linux/macOS were not used for the recorded run. The commands below use `--device cpu`; substitute `--device cuda` where available.
+
+`requirements-model.txt` includes the model and data libraries. `requirements.txt` is an alternative for data-only work and does not install the recognizer.
+
+### 3. Download the pinned base model once
+
+```sh
+python -c "from huggingface_hub import snapshot_download; snapshot_download('openai/clip-vit-base-patch32', revision='3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268', cache_dir='runs/hub', allow_patterns=['*.json', '*.txt', 'pytorch_model.bin'])"
+```
+
+The recognizer loads only this local revision. Keep the complete `runs/hub/` cache; subsequent loading can work offline.
+
+### 4. Choose inference or training
+
+**Use the existing model:** obtain `runs/phase4/best.pt` from the maintainers or an existing local copy, then follow [Run the final model](#run-the-final-model). Fine-tuned weights and the base cache are excluded from Git; cloning does not supply them. There is no bundled fine-tuned-weight download command.
+
+**Train your own model:** prepare the included data and follow the next section. Use a fresh run and evidence directory so the existing results remain available.
+
+### 5. Prepare data for training
+
+The repository includes 400 source images and their manifests. Generate the prepared images and split locally:
+
+```sh
+python "data scripts/audit_sources.py"
+python "data scripts/clean_data.py"
+python "data scripts/preprocess.py"
+python "data scripts/split_data.py"
+python "data scripts/eda.py"
+```
+
+The scripts check source hashes, clean records, flag duplicates/outliers, create RGB 224 x 224 PNGs, assign class IDs, create a seeded split, and generate EDA figures. Source audit summaries are generated under `data/processed/source_audits/`, separate from model evidence. Near-duplicates require review; outlier flags do not automatically remove images. Record approved removals in `data/review_decisions.csv` before regenerating data.
+
+Inspect `data/processed/split_summary.json` for **280 training / 64 validation / 56 test** photos and zero cross-split leakage. Check the model's manifest contract:
+
+```sh
+python -c "from collections import Counter; from model.data import load_records; rows, labels = load_records(); print(Counter(r['split'] for r in rows)); print(labels)"
+```
+
+Inference on a new photo does not need the training images or evidence files.
+
+## How the model is built
+
+The recognizer adapts pretrained **OpenAI CLIP ViT-B/32**, pinned to revision `3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268`.
+
+1. **Preprocess the photo:** correct EXIF orientation, convert to RGB, resize the shorter side to 224 with bicubic interpolation, center-crop to 224 x 224, divide pixels by 255, and normalize with CLIP's channel means/stds. Prepared PNGs are normalized once without a second crop or resize.
+2. **Represent the labels:** the frozen text encoder converts `a photo of Pakistani <dish>` into one fixed, normalized 512-dimensional vector per dish.
+3. **Represent the photo:** the vision encoder projects it into the same 512-dimensional space.
+4. **Compare:** scaled dot products produce eight logits; softmax gives dish-ranking scores. No new classification head is added.
+5. **Fine-tune:** update vision blocks 10 and 11, final vision layer normalization, and visual projection only: **14,570,496 trainable parameters**. The other layers and text encoder remain frozen.
+
+The class-ID order is: **chicken biryani, chicken pulao, chicken karahi, daal, nihari, haleem, samosa, chapati** (IDs 0 through 7).
+
+Training uses categorical cross-entropy without class weights or label smoothing, AdamW, 10% warmup followed by cosine decay, and gradient clipping at 1.0. Bias and normalization parameters receive no weight decay.
+
+Defaults in `model/config.py` are the previously selected pilot settings: block learning rate **2e-5**, norm/projection learning rate **5e-5**, batch size **8**, weight decay **0.01**, maximum **20 epochs**, patience **5**, seed **42**, and dropout **0**. The historical six-candidate pilot comparison is preserved inside `training.json` under `provenance`; new training no longer requires separate pilot files.
+
+## Train, test, and report
+
+### Train
+
+Use fresh directories for a new experiment:
+
+```sh
+python -m model.train --output runs/reproduction --evidence evidence/reproduction --device cpu
+```
+
+Training saves `runs/reproduction/best.pt` and updates `evidence/reproduction/training.json`. It selects the highest validation top-1 count, then lower loss, keeping the earlier epoch on exact ties. Five epochs without improvement trigger early stopping. Test images never enter the training loaders.
+
+Training automatically reconstructs the saved checkpoint, compares all validation logits, and checks original-photo inference before marking the run completed. For a separate process check, optionally run:
+
+```sh
+python -m model.train --verify-only --evidence evidence/reproduction --device cpu
+```
+
+The verifier requires logit agreement within `1e-6` on the same device or `1e-4` across devices. Use `--epochs 1` for a short execution check, or `--config path/to/settings.json` for explicit settings. Such changes define a new experiment rather than the recorded full run.
+
+### Evaluate
+
+```sh
+python -m model.evaluate --evidence evidence/reproduction --device cpu
+```
+
+This reads the checkpoint location from `training.json`, checks training/verification/data agreement, and records the evaluation protocol before inference. It then writes `predictions.csv` and completes `evaluation.json` with accuracy, precision/recall/F1, ROC-AUC, confusion counts, source/size subgroups, and model details.
+
+The protocol and attempt status live inside `evaluation.json`; separate prepare/freeze commands are no longer needed. An existing evaluation, including a failed attempt, blocks repeated inference in that directory. Use saved predictions for analysis. A justified bug-fix rerun must preserve and document the prior attempt; repeated use of the same test set does not create new unbiased data.
+
+### Report
+
+To regenerate the existing report:
+
+```sh
 python -m model.report
 ```
 
-Use `--device cpu` when CUDA is unavailable. The six declared pilot candidates
-change one parameter at a time, each with seed 42 and the same epoch budget.
-The objective is unweighted categorical cross-entropy without label smoothing.
-AdamW uses separate block and norm/projection learning rates, excludes biases
-and normalization weights from decay, and uses 10% warmup, cosine decay and
-gradient clipping at 1.0. Pilot datasets expose only train and validation.
+For a new experiment:
 
-Prepared 224x224 RGB PNGs are scaled and normalized once without a second crop
-or resize. User uploads use the exact Phase 2 EXIF/resize/crop recipe followed
-by that same normalization. `model/data.py` validates both manifests, label IDs,
-counts, file paths and group separation before loading pixels.
-
-Pilot weights and full run files live in `runs/phase3/<run_id>/`. Small measured
-results, histories, environment details, trainable names, tuning CSV and the
-selected configuration are exported to `evidence/phase3/`. A run directory is
-never overwritten; completed candidates can be reused only with matching
-protocol and data. Failed attempts are recorded as failures, not measurements.
-`python -m model.report` exports `report/phase3.tex` and
-`docs/05_Phase_3_results.md` only after all six pilots and independent checkpoint
-verification succeed. The generated section is included in `report/main.tex`.
-
-The selected configuration uses block LR `2e-5`, norm/projection LR `5e-5`,
-batch size 8 and weight decay `0.01`. Highest validation top-1 count determines
-selection, then lower loss; the short pilot does not establish optimality.
-The pilot checkpoint is `runs/phase3/block_high/best.pt`.
-
-On this machine, the standalone Python 3.12.10 interpreter at
-`runs/python312/python.exe` successfully ran the tests and GPU pilots. Substitute
-`.\runs\python312\python.exe` for `python` in these commands when using this
-local setup. A normal Python 3.12 virtual environment remains the portable setup;
-the local standalone interpreter and base model cache are ignored by Git.
-
-To check manifests without loading PyTorch:
-
-```powershell
-python -m unittest discover -s tests -p test_data_contracts.py -v
+```sh
+python -m model.report --evidence evidence/reproduction
 ```
 
-Phase 4 starts a fresh pretrained model with the selected configuration, up to
-20 epochs and early stopping after five validation epochs without improvement:
+The report checks prediction hashes, label/ranking consistency, and exact metric reproduction from the CSV. It generates `docs/results.md`, `docs/model_report.tex`, and figures under `figures/model/`, without training or test inference. It can read the three evidence files without the model weights or prepared dataset; the error montage needs the original error photos.
 
-```powershell
-python -m model.train --config evidence/phase3/selected_config.json --epochs 20 --output runs/phase4 --device cuda
-python -m model.infer runs/phase4/best.pt path/to/photo.jpg --device cuda
+Review misclassified photos and add observations to `error_reviews` in `evaluation.json`. The report explicitly marks missing observations as pending. Keep source labels unchanged unless a separately documented data review justifies a new experiment.
+
+Report and figure destinations can be changed with `--output` and `--figures`; defaults are shared and replace generated outputs. Optional PDF compilation requires a TeX distribution with `pdflatex` on `PATH`. Create `output/pdf/` and run twice from the repository root:
+
+```sh
+pdflatex -interaction=nonstopmode -halt-on-error -output-directory output/pdf docs/model_report.tex
+pdflatex -interaction=nonstopmode -halt-on-error -output-directory output/pdf docs/model_report.tex
 ```
 
-For a Phase 3 inference check, substitute the selected pilot's `best.pt`.
-The Python API is `Recognizer(checkpoint, device).predict(photo)`, imported from
-`model.infer`. It returns `ranked_dishes` with `label_id`, `dish`, `logit` and
-`score`; `scores_are_calibrated` is false. Scores rank only these eight dishes,
-and do not measure reliable confidence or detect unfamiliar meals.
+### Software checks
 
-Checkpoints store adapted weights, fixed prompt vectors, class order, prompts,
-preprocessing, exact source revision, trainable-layer inventory, manifest and
-train/validation pixel hashes, settings, environment and selected epoch metrics.
-Every successful run verifies saved/reloaded validation logits within 1e-6.
-Full training and all held-out test evaluation belong to Phase 4.
-
-The internal `planning/` guide is excluded locally and is **not part of the course submission**.
-
-To rebuild `report/main.pdf`, install a TeX distribution with `pdflatex` on PATH
-and use the commands in **Compile the LaTeX report** below. The pip package
-named `pdflatex` is a wrapper and does not include the compiler executable.
-
-## Current data status and usage conditions
-
-The collection contains **400 images, 50 for each of the eight dishes**, selected from four public Roboflow Universe datasets released under **CC BY 4.0** (as stated by their uploaders): IndianFoodRecog (EnVisionAI), combined-dataset (Rafias Workspace), Bangladeshi Food Classification2 (NSN) and samosa. `data/sources.csv` records each dataset's URL, version URL, access date, license, export format and archive SHA-256. `data/metadata.csv` records, for every image, its source, author, license, original file name inside the dataset archive, and the SHA-256 of the image file. Nutrition values for all eight dishes (per 100 g, with source, calculation and recipe assumption) are in `data/nutrition.csv`.
-
-The 400 selected images are committed under `data/images/`. Credit the original authors when reusing them. `python "data scripts/audit_sources.py"` checks every committed image against the SHA-256 in `data/metadata.csv` and writes four summaries under `evidence/`. Those summaries are derived from the committed manifest and files. The original Roboflow export archives and provider README files are unavailable, so the archive hashes recorded in `data/sources.csv` cannot currently be rechecked.
-
-Known limits: the second human review of labels is still pending for all images; the sources are largely Indian and Bangladeshi, so Pakistani appearance is only partly represented; the providers resized every image to a square, so image size depends on the source (see the report's EDA section).
-
-## Set up the current data scripts
-
-Use Python 3.10 or later. In PowerShell from the repository root:
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
+```sh
+python -m unittest discover -s tests -v
+python "data scripts/verify_reproducible.py"
 ```
 
-Add image records to `data/metadata.csv` after placing allowed images under `data/images/`. Images in that directory are tracked by Git. `local_path` is relative to the repository root, for example `data/images/daal/RF_COMBINED_0123456789abcdef.jpg`. Use one of the exact dish labels above. Record the image's `source_id` in `data/sources.csv`, and record the image file's SHA-256 in `metadata.csv`.
+The tests cover the three-file workflow, saved-result fidelity, metric edge cases, changed artifacts, failure recording, and repeat-evaluation protection. The data reproducibility command reruns the five data steps twice and compares generated CSV, JSON, PNG, and source-audit hashes. It regenerates data outputs intentionally.
 
-Optional metadata column: add `group_id` to `data/metadata.csv` and give photos of the same physical plate the same value, so the split keeps them together.
+## Run the final model
 
-Run the Phase 2 pipeline in this order (from the repository root):
+CLI:
 
-```powershell
-python "data scripts/audit_sources.py"  # checks source counts and image hashes; writes derived summaries
-python "data scripts/clean_data.py"     # 4.1 validate, 4.2 duplicates + outliers + nutrition checks
-python "data scripts/preprocess.py"     # 4.3 CLIP preprocessing + dish-name -> integer ID mapping
-python "data scripts/split_data.py"     # 4.4 seeded, stratified, leakage-aware train/val/test split
-python "data scripts/eda.py"            # EDA charts in figures/
-python "data scripts/verify_reproducible.py"   # 4.5 reruns all five steps and compares outputs
-python -m unittest discover -s tests -v       # edge-case regression tests
+```sh
+python -m model.infer runs/phase4/best.pt "path/to/meal.jpg" --device cpu
 ```
 
-| Script | What it does | Main outputs (`data/processed/`) |
-| --- | --- | --- |
-| `common.py` | Dish list, label IDs, CLIP constants, split seed | (shared by all scripts) |
-| `audit_sources.py` | Verifies committed image hashes and per-source counts; records limits of available provenance | `evidence/*_summary.json` |
-| `clean_data.py` | Checks columns, labels, sources, readable files and recorded image hashes; removes exact duplicates (and copies under conflicting labels); lists near-duplicate pairs by perceptual hash for **human review**; flags image outliers (not removed); validates nutrition values | `metadata_clean.csv`, `exclusions.csv`, `near_duplicate_pairs.csv`, `outlier_flags.csv`, `nutrition_clean.csv`, `cleaning_summary.json` |
-| `preprocess.py` | Produces 224-pixel RGB PNGs for inspection, records CLIP-normalised pixel statistics, maps each PNG to a stable label ID; nutrition stays per 100 g. Apply CLIP's mean/std normalisation when loading PNGs for a model. | `clip_224/`, `clip_manifest.csv`, `label_map.json`, `preprocess_summary.json` |
-| `split_data.py` | 70/15/15 split per dish with seed 42; near-duplicates and same-plate photos stay in one split; runs leakage checks | `split.csv`, `split_summary.json` |
-| `eda.py` | Class counts, missing data, sample photos, size distributions, correlations, source mix, split, nutrition charts | `figures/*.png` |
-| `verify_reproducible.py` | Runs all five steps twice, checks output completeness and compares SHA-256 of the expected CSV, JSON and PNG outputs | `reproducibility_check.json` |
+Replace the photo path with a real image. For a new experiment, use `runs/reproduction/best.pt`. Add `--prepared` only for a Phase 2 RGB 224 x 224 PNG; ordinary photos use the default preprocessing.
 
-Near-duplicates are **flagged, never deleted automatically**. After reviewing `near_duplicate_pairs.csv`, record each removal in `data/review_decisions.csv` (`image_id,decision,reason` with `decision` = `drop`) and re-run the pipeline. Outlier flags are for review only. The current dataset has no near-duplicate pairs and four size outlier flags.
+Python API:
 
-## Compile the LaTeX report
+```python
+from model.infer import Recognizer
 
-The report contains the checked-in data preparation and the measured Phase 3 implementation/pilot. It records the pending second human label review and unavailable original acquisition archives. With a LaTeX installation:
-
-```powershell
-Set-Location report
-pdflatex main.tex
-pdflatex main.tex
-Set-Location ..
+recognizer = Recognizer("runs/phase4/best.pt", device="cpu")
+result = recognizer.predict("path/to/meal.jpg")
+for suggestion in result["ranked_dishes"][:3]:
+    print(suggestion["dish"], suggestion["score"])
 ```
 
-The course requires a LaTeX-compiled PDF, a GitHub repository with active participation from all members, raw-data figures, and the Phase 1 and Phase 2 evidence described in the handout. The proposal PDF alone does not satisfy those requirements.
+Reuse the recognizer for multiple photos. It returns eight ranked entries with `label_id`, `dish`, raw `logit`, and softmax `score`, plus `scores_are_calibrated: false`. These are rankings among eight labels, not reliable confidence estimates or unfamiliar-food detection.
+
+`best.pt` stores adapted weights, fixed prompt vectors, labels, preprocessing, source revision, and training metadata. It is not a self-contained full-model, ONNX, or TorchScript export. Moving it to another machine also requires the pinned base cache. Back up both separately from Git.
+
+The recorded checkpoint SHA-256 is:
+
+```text
+b9089dffbfdf8c682ed28826be143a647a24a675847ca4291bf6f061c34466e4
+```
+
+Verify a copy with `python -c "from model.config import sha256; print(sha256('runs/phase4/best.pt'))"`. A newly trained checkpoint has its own identity and measurements.
+
+## Results
+
+The dataset contains 50 photos per dish. A stratified, group-aware split with seed 42 gives **280/64/56** photos (70%/16%/14%, after whole-image allocation).
+
+The recorded full run trained for **11 epochs** and selected **epoch 6**:
+
+- Validation: **61/64 top-1 (95.31%)**, **64/64 top-3**, loss **0.215961**.
+- Held-out test: **54/56 top-1 (96.43%)**, **56/56 top-3 (100%)**.
+- Macro F1: **0.9641**; macro one-vs-rest ROC-AUC: **0.9985**.
+- Independent loading reproduced all 64 saved validation logit rows exactly in the recorded environment.
+
+The two errors were nihari predicted as chicken karahi, and haleem predicted as chapati; both correct labels ranked second. The original evaluator failed after inference during an underscore/space label join; the corrected evaluation used unchanged weights and data. The disclosure is preserved in `evaluation.json` under `provenance.rerun`.
+
+## Files and code
+
+```text
+model/
+  __init__.py        Python package marker
+  config.py          Settings and reading/writing the three evidence files
+  data.py            Dataset validation, transforms, and loaders
+  clip_classifier.py CLIP architecture and checkpoint saving/loading
+  train.py           Training, epoch selection, and checkpoint verification
+  evaluate.py        Held-out evaluation
+  metrics.py         Classification and ROC calculations
+  report.py          Reports and figures from saved predictions
+  infer.py           CLI and Recognizer API
+evidence/
+  training.json
+  predictions.csv
+  evaluation.json
+data/                Source images, manifests, nutrition, generated processed data
+data scripts/        Audit, cleaning, preprocessing, split, EDA, reproducibility
+docs/                Guides and generated reports
+figures/             EDA and model-result figures
+runs/                Local checkpoints and pretrained cache (ignored by Git)
+tests/               Regression tests
+```
+
+The model package contains nine Python files, including its package marker. Dataset checks are grouped with data loading, evidence helpers with configuration, checkpoint handling with the classifier, and verification with training. The old phase-specific orchestrator, pilot runner, duplicate verifier, and duplicate report exporter have been removed. Historical experiment details remain in the consolidated provenance records.
+
+## Troubleshooting
+
+- **PowerShell blocks activation:** call `.venv\Scripts\python.exe` instead of `python`; activation is optional.
+- **CUDA unavailable:** use the CPU installation and `--device cpu`.
+- **Base-model loading fails:** run the pinned download command and retain the full `runs/hub/` cache.
+- **Missing `best.pt`:** obtain the evaluated weights or train a new model. Installing dependencies does not create fine-tuned weights.
+- **Missing prepared manifests:** run data preparation before training or verification.
+- **Existing experiment/evaluation:** choose fresh directories for new work; use saved predictions for reports.
+- **Data/checkpoint mismatch:** check labels, images, preprocessing, and source revision. Do not bypass agreement checks to claim a reproduction.
+- **`No module named model`:** run `python -m model.<command>` from the repository root.
+
+## Data and limitations
+
+The image sources are four public Roboflow Universe datasets: IndianFoodRecog (EnVisionAI), combined-dataset (Rafias Workspace), Bangladeshi Food Classification2 (NSN), and samosa. Uploaders stated **CC BY 4.0** licensing. [data/sources.csv](data/sources.csv) and [data/metadata.csv](data/metadata.csv) preserve source URLs, attribution, transformations, and recorded hashes. Retain image attribution when reusing them. No repository-wide software license file is currently included.
+
+Source audits verify committed image hashes. Original provider archives/README files are unavailable, so their recorded archive hashes cannot be rechecked. Second human label review remains pending. Only seven test examples per dish, confounded sources/resolutions, and largely Indian/Bangladeshi appearances limit interpretation. External Pakistani meals, mixed plates, and unfamiliar-food rejection remain untested or unsupported; demographic data are unavailable.
+
+Nutrition is separate: `data/nutrition.csv` supplies per-100-g references, and the intended calculation is `value_per_100g * serving_grams / 100` after user confirmation. The inference API returns dish rankings only. Nutrition estimates depend on recipe and serving weight and are not medical advice.
+
+## Team and guides
+
+- **Hassan Mehmood (24L-2559):** technical lead, repository structure, CLIP input/split plan, report integration, and final checks for Deliverable 1.
+- **Mohid Israr (24L-2510):** image acquisition, source records, dish definitions, and labels for Deliverable 1.
+- **Adnan Zaka (24i-2537):** data cleaning, nutrition references, and exploratory charts for Deliverable 1.
+
+Read the [project overview](docs/01_high_level_explaination.md), [model implementation guide](docs/02_model_implementation.md), and [training/testing guide](docs/03_model_testing.md). The earlier [Deliverable 1 report](Deliverable%201%20Report.pdf) remains available.
