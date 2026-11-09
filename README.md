@@ -14,7 +14,7 @@ Each member should make substantive commits under their own GitHub account. The 
 
 ## Problem and AI approach
 
-Pakistani dishes vary in recipe and appearance. Fixed rules based on colour or shape are unlikely to recognize them reliably from photos. We will first test a pretrained CLIP model without changing its weights. Then we will fine-tune a small part of CLIP's image encoder on labeled Pakistani food photos, keeping its text encoder fixed. Both versions will be compared on the same held-out test photos using top-1 accuracy, top-3 accuracy, per-dish results, and a confusion matrix. The better-performing version will be considered for the app.
+Pakistani dishes vary in recipe and appearance. Fixed rules based on colour or shape are unlikely to recognize them reliably from photos. The Phase 3 engine partially fine-tunes CLIP's image encoder while keeping its text encoder fixed. Phase 4 will fully train the selected configuration and evaluate this single recognizer on reserved test photos, including top-1/top-3 accuracy, precision, recall, F1, ROC-AUC and error analysis. The earlier proposal's two-model comparison has been superseded by the Phase 3 and Phase 4 implementation documents.
 
 The initial labels are **chicken biryani, chicken pulao, chicken karahi, daal, nihari, haleem, samosa, and chapati**. This list may change after a data audit. The model suggests a dish; the user confirms or corrects it. Nutrition is a separate calculation based on a documented value per 100 g and the user's entered serving weight. It is an estimate, not medical advice.
 
@@ -34,14 +34,119 @@ data/sources.csv                Dataset/source provenance for four sources
 data/images/                    400 committed images, one folder per dish
 data/processed/                 Generated cleaned data (ignored by Git)
 figures/                        Report figures generated from the current data
-report/main.tex                 Completed Deliverable 1 LaTeX technical report
-report/preview.py               PDF export and browser preview with automatic rebuilds
-report/main.pdf                 PDF produced beside main.tex by report/preview.py
+report/main.tex                 Data preparation and Phase 3 technical report
+report/phase3.tex               Phase 3 section exported from measured pilot evidence
+report/main.pdf                 Compiled technical report
+model/                          CLIP recognizer, trainer, pilot and inference modules
+requirements-model.txt          Tested model dependencies
+tests/                          Data and model contract tests
+runs/                           Local model cache, weights and histories (ignored)
 ```
+
+## Phase 3 model engine
+
+**Phase 3 is complete:** all 16 contract tests pass, all six two-epoch GPU pilots
+completed, and independent checkpoint loading reproduced all 64 validation logit
+rows exactly. The selected candidate reached **58/64 validation top-1** and
+**63/64 top-3**, with loss **0.282456**. These are exploratory pilot results;
+the 56 test photos remain reserved for Phase 4. See `docs/05_Phase_3_results.md`
+and `evidence/phase3/` for measured settings, histories and verification.
+
+Phase 3 uses PyTorch and Hugging Face Transformers with the pinned
+`openai/clip-vit-base-patch32` revision
+`3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268`. The execution design is in
+`docs/04_Phase_3_execution_plan.md`. The eight class IDs come directly from
+`data/processed/label_map.json`.
+
+The image tower is ViT-B/32 (12 blocks, width 768, 12 heads). The fixed text
+tower has 12 blocks, width 512 and 8 heads; both project to 512 dimensions.
+Only vision blocks 10 and 11, final vision layer normalization and visual
+projection train. Eight fixed `a photo of Pakistani [dish]` embeddings supply
+the classifier scores; no new classification head is added. Most pretrained
+features stay frozen because only 280 training photos are available.
+
+Install Python 3.12, create/activate `.venv`, then install the pinned libraries:
+
+```powershell
+python -m pip install torch==2.9.0 --index-url https://download.pytorch.org/whl/cu128
+python -m pip install -r requirements-model.txt
+# For a CPU-only environment, use https://download.pytorch.org/whl/cpu instead.
+```
+
+Download the pinned base model once. It is cached inside ignored `runs/hub/`;
+model loading then works offline and uses only this revision:
+
+```powershell
+python -c "from huggingface_hub import snapshot_download; snapshot_download('openai/clip-vit-base-patch32', revision='3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268', cache_dir='runs/hub', allow_patterns=['*.json','*.txt','pytorch_model.bin'])"
+python -m unittest discover -s tests -v
+python -m model.pilot --epochs 2 --device cuda
+python -m model.verify --device cuda
+python -m model.report
+```
+
+Use `--device cpu` when CUDA is unavailable. The six declared pilot candidates
+change one parameter at a time, each with seed 42 and the same epoch budget.
+The objective is unweighted categorical cross-entropy without label smoothing.
+AdamW uses separate block and norm/projection learning rates, excludes biases
+and normalization weights from decay, and uses 10% warmup, cosine decay and
+gradient clipping at 1.0. Pilot datasets expose only train and validation.
+
+Prepared 224x224 RGB PNGs are scaled and normalized once without a second crop
+or resize. User uploads use the exact Phase 2 EXIF/resize/crop recipe followed
+by that same normalization. `model/data.py` validates both manifests, label IDs,
+counts, file paths and group separation before loading pixels.
+
+Pilot weights and full run files live in `runs/phase3/<run_id>/`. Small measured
+results, histories, environment details, trainable names, tuning CSV and the
+selected configuration are exported to `evidence/phase3/`. A run directory is
+never overwritten; completed candidates can be reused only with matching
+protocol and data. Failed attempts are recorded as failures, not measurements.
+`python -m model.report` exports `report/phase3.tex` and
+`docs/05_Phase_3_results.md` only after all six pilots and independent checkpoint
+verification succeed. The generated section is included in `report/main.tex`.
+
+The selected configuration uses block LR `2e-5`, norm/projection LR `5e-5`,
+batch size 8 and weight decay `0.01`. Highest validation top-1 count determines
+selection, then lower loss; the short pilot does not establish optimality.
+The pilot checkpoint is `runs/phase3/block_high/best.pt`.
+
+On this machine, the standalone Python 3.12.10 interpreter at
+`runs/python312/python.exe` successfully ran the tests and GPU pilots. Substitute
+`.\runs\python312\python.exe` for `python` in these commands when using this
+local setup. A normal Python 3.12 virtual environment remains the portable setup;
+the local standalone interpreter and base model cache are ignored by Git.
+
+To check manifests without loading PyTorch:
+
+```powershell
+python -m unittest discover -s tests -p test_data_contracts.py -v
+```
+
+Phase 4 starts a fresh pretrained model with the selected configuration, up to
+20 epochs and early stopping after five validation epochs without improvement:
+
+```powershell
+python -m model.train --config evidence/phase3/selected_config.json --epochs 20 --output runs/phase4 --device cuda
+python -m model.infer runs/phase4/best.pt path/to/photo.jpg --device cuda
+```
+
+For a Phase 3 inference check, substitute the selected pilot's `best.pt`.
+The Python API is `Recognizer(checkpoint, device).predict(photo)`, imported from
+`model.infer`. It returns `ranked_dishes` with `label_id`, `dish`, `logit` and
+`score`; `scores_are_calibrated` is false. Scores rank only these eight dishes,
+and do not measure reliable confidence or detect unfamiliar meals.
+
+Checkpoints store adapted weights, fixed prompt vectors, class order, prompts,
+preprocessing, exact source revision, trainable-layer inventory, manifest and
+train/validation pixel hashes, settings, environment and selected epoch metrics.
+Every successful run verifies saved/reloaded validation logits within 1e-6.
+Full training and all held-out test evaluation belong to Phase 4.
 
 The internal `planning/` guide is excluded locally and is **not part of the course submission**.
 
-To export the report to `report/main.pdf`, install a TeX distribution with `pdflatex`, `latexmk`, or `tectonic` on PATH, then run `python report/preview.py --build` from the repository root. Run `python report/preview.py` to open a browser preview that rebuilds when `report/main.tex` or a figure changes; stop it with Ctrl+C. The pip package named `pdflatex` is a wrapper and does not include the compiler executable. The desktop editor compiles its live preview separately and does not write that preview into the repository.
+To rebuild `report/main.pdf`, install a TeX distribution with `pdflatex` on PATH
+and use the commands in **Compile the LaTeX report** below. The pip package
+named `pdflatex` is a wrapper and does not include the compiler executable.
 
 ## Current data status and usage conditions
 
@@ -91,7 +196,7 @@ Near-duplicates are **flagged, never deleted automatically**. After reviewing `n
 
 ## Compile the LaTeX report
 
-The Deliverable 1 report source is complete for the checked-in data. It explicitly records the pending second human label review and unavailable original acquisition archives. With a LaTeX installation:
+The report contains the checked-in data preparation and the measured Phase 3 implementation/pilot. It records the pending second human label review and unavailable original acquisition archives. With a LaTeX installation:
 
 ```powershell
 Set-Location report

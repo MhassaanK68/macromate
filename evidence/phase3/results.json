@@ -1,0 +1,578 @@
+[
+  {
+    "settings": {
+      "block_lr": 1e-05,
+      "projection_lr": 5e-05,
+      "batch_size": 8,
+      "weight_decay": 0.01,
+      "epochs": 2,
+      "patience": 5,
+      "seed": 42,
+      "warmup_fraction": 0.1,
+      "gradient_clip": 1.0,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "epsilon": 1e-08,
+      "dropout": 0.0
+    },
+    "environment": {
+      "python": "3.12.10",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "packages": {
+        "torch": "2.9.0+cu128",
+        "transformers": "4.57.1",
+        "numpy": "2.2.6",
+        "Pillow": "11.3.0",
+        "huggingface-hub": "0.36.2",
+        "tokenizers": "0.22.2",
+        "safetensors": "0.8.0"
+      },
+      "device": "cuda",
+      "device_name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+      "cuda_runtime": "12.8",
+      "precision": "float32",
+      "gpu_total_memory_bytes": 4294443008,
+      "cpu_threads": 4,
+      "deterministic_algorithms": true
+    },
+    "epochs_completed": 2,
+    "best_epoch": 2,
+    "validation": {
+      "loss": 0.29452942591160536,
+      "total": 64,
+      "top1_correct": 58,
+      "top3_correct": 63,
+      "top1_accuracy": 0.90625,
+      "top3_accuracy": 0.984375,
+      "per_class": [
+        {
+          "label_id": 0,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 1,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 2,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 3,
+          "total": 8,
+          "correct": 6
+        },
+        {
+          "label_id": 4,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 5,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 6,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 7,
+          "total": 8,
+          "correct": 8
+        }
+      ]
+    },
+    "seconds": 7.734415499999159,
+    "reload_max_error": 0.0,
+    "trainable_count": 14570496,
+    "status": "completed",
+    "run_id": "baseline"
+  },
+  {
+    "settings": {
+      "block_lr": 5e-06,
+      "projection_lr": 5e-05,
+      "batch_size": 8,
+      "weight_decay": 0.01,
+      "epochs": 2,
+      "patience": 5,
+      "seed": 42,
+      "warmup_fraction": 0.1,
+      "gradient_clip": 1.0,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "epsilon": 1e-08,
+      "dropout": 0.0
+    },
+    "environment": {
+      "python": "3.12.10",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "packages": {
+        "torch": "2.9.0+cu128",
+        "transformers": "4.57.1",
+        "numpy": "2.2.6",
+        "Pillow": "11.3.0",
+        "huggingface-hub": "0.36.2",
+        "tokenizers": "0.22.2",
+        "safetensors": "0.8.0"
+      },
+      "device": "cuda",
+      "device_name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+      "cuda_runtime": "12.8",
+      "precision": "float32",
+      "gpu_total_memory_bytes": 4294443008,
+      "cpu_threads": 4,
+      "deterministic_algorithms": true
+    },
+    "epochs_completed": 2,
+    "best_epoch": 2,
+    "validation": {
+      "loss": 0.30772874457761645,
+      "total": 64,
+      "top1_correct": 57,
+      "top3_correct": 63,
+      "top1_accuracy": 0.890625,
+      "top3_accuracy": 0.984375,
+      "per_class": [
+        {
+          "label_id": 0,
+          "total": 8,
+          "correct": 6
+        },
+        {
+          "label_id": 1,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 2,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 3,
+          "total": 8,
+          "correct": 6
+        },
+        {
+          "label_id": 4,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 5,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 6,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 7,
+          "total": 8,
+          "correct": 8
+        }
+      ]
+    },
+    "seconds": 6.7790142000012565,
+    "reload_max_error": 0.0,
+    "trainable_count": 14570496,
+    "status": "completed",
+    "run_id": "block_low"
+  },
+  {
+    "settings": {
+      "block_lr": 2e-05,
+      "projection_lr": 5e-05,
+      "batch_size": 8,
+      "weight_decay": 0.01,
+      "epochs": 2,
+      "patience": 5,
+      "seed": 42,
+      "warmup_fraction": 0.1,
+      "gradient_clip": 1.0,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "epsilon": 1e-08,
+      "dropout": 0.0
+    },
+    "environment": {
+      "python": "3.12.10",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "packages": {
+        "torch": "2.9.0+cu128",
+        "transformers": "4.57.1",
+        "numpy": "2.2.6",
+        "Pillow": "11.3.0",
+        "huggingface-hub": "0.36.2",
+        "tokenizers": "0.22.2",
+        "safetensors": "0.8.0"
+      },
+      "device": "cuda",
+      "device_name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+      "cuda_runtime": "12.8",
+      "precision": "float32",
+      "gpu_total_memory_bytes": 4294443008,
+      "cpu_threads": 4,
+      "deterministic_algorithms": true
+    },
+    "epochs_completed": 2,
+    "best_epoch": 2,
+    "validation": {
+      "loss": 0.2824557083658874,
+      "total": 64,
+      "top1_correct": 58,
+      "top3_correct": 63,
+      "top1_accuracy": 0.90625,
+      "top3_accuracy": 0.984375,
+      "per_class": [
+        {
+          "label_id": 0,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 1,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 2,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 3,
+          "total": 8,
+          "correct": 6
+        },
+        {
+          "label_id": 4,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 5,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 6,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 7,
+          "total": 8,
+          "correct": 8
+        }
+      ]
+    },
+    "seconds": 6.781345800000054,
+    "reload_max_error": 0.0,
+    "trainable_count": 14570496,
+    "status": "completed",
+    "run_id": "block_high"
+  },
+  {
+    "settings": {
+      "block_lr": 1e-05,
+      "projection_lr": 2e-05,
+      "batch_size": 8,
+      "weight_decay": 0.01,
+      "epochs": 2,
+      "patience": 5,
+      "seed": 42,
+      "warmup_fraction": 0.1,
+      "gradient_clip": 1.0,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "epsilon": 1e-08,
+      "dropout": 0.0
+    },
+    "environment": {
+      "python": "3.12.10",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "packages": {
+        "torch": "2.9.0+cu128",
+        "transformers": "4.57.1",
+        "numpy": "2.2.6",
+        "Pillow": "11.3.0",
+        "huggingface-hub": "0.36.2",
+        "tokenizers": "0.22.2",
+        "safetensors": "0.8.0"
+      },
+      "device": "cuda",
+      "device_name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+      "cuda_runtime": "12.8",
+      "precision": "float32",
+      "gpu_total_memory_bytes": 4294443008,
+      "cpu_threads": 4,
+      "deterministic_algorithms": true
+    },
+    "epochs_completed": 2,
+    "best_epoch": 2,
+    "validation": {
+      "loss": 0.3023558733984828,
+      "total": 64,
+      "top1_correct": 57,
+      "top3_correct": 63,
+      "top1_accuracy": 0.890625,
+      "top3_accuracy": 0.984375,
+      "per_class": [
+        {
+          "label_id": 0,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 1,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 2,
+          "total": 8,
+          "correct": 6
+        },
+        {
+          "label_id": 3,
+          "total": 8,
+          "correct": 6
+        },
+        {
+          "label_id": 4,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 5,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 6,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 7,
+          "total": 8,
+          "correct": 8
+        }
+      ]
+    },
+    "seconds": 6.834036400001423,
+    "reload_max_error": 0.0,
+    "trainable_count": 14570496,
+    "status": "completed",
+    "run_id": "projection_low"
+  },
+  {
+    "settings": {
+      "block_lr": 1e-05,
+      "projection_lr": 5e-05,
+      "batch_size": 16,
+      "weight_decay": 0.01,
+      "epochs": 2,
+      "patience": 5,
+      "seed": 42,
+      "warmup_fraction": 0.1,
+      "gradient_clip": 1.0,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "epsilon": 1e-08,
+      "dropout": 0.0
+    },
+    "environment": {
+      "python": "3.12.10",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "packages": {
+        "torch": "2.9.0+cu128",
+        "transformers": "4.57.1",
+        "numpy": "2.2.6",
+        "Pillow": "11.3.0",
+        "huggingface-hub": "0.36.2",
+        "tokenizers": "0.22.2",
+        "safetensors": "0.8.0"
+      },
+      "device": "cuda",
+      "device_name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+      "cuda_runtime": "12.8",
+      "precision": "float32",
+      "gpu_total_memory_bytes": 4294443008,
+      "cpu_threads": 4,
+      "deterministic_algorithms": true
+    },
+    "epochs_completed": 2,
+    "best_epoch": 1,
+    "validation": {
+      "loss": 0.3445461541414261,
+      "total": 64,
+      "top1_correct": 57,
+      "top3_correct": 63,
+      "top1_accuracy": 0.890625,
+      "top3_accuracy": 0.984375,
+      "per_class": [
+        {
+          "label_id": 0,
+          "total": 8,
+          "correct": 5
+        },
+        {
+          "label_id": 1,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 2,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 3,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 4,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 5,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 6,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 7,
+          "total": 8,
+          "correct": 8
+        }
+      ]
+    },
+    "seconds": 5.988792099999046,
+    "reload_max_error": 0.0,
+    "trainable_count": 14570496,
+    "status": "completed",
+    "run_id": "batch_16"
+  },
+  {
+    "settings": {
+      "block_lr": 1e-05,
+      "projection_lr": 5e-05,
+      "batch_size": 8,
+      "weight_decay": 0.0,
+      "epochs": 2,
+      "patience": 5,
+      "seed": 42,
+      "warmup_fraction": 0.1,
+      "gradient_clip": 1.0,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "epsilon": 1e-08,
+      "dropout": 0.0
+    },
+    "environment": {
+      "python": "3.12.10",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "packages": {
+        "torch": "2.9.0+cu128",
+        "transformers": "4.57.1",
+        "numpy": "2.2.6",
+        "Pillow": "11.3.0",
+        "huggingface-hub": "0.36.2",
+        "tokenizers": "0.22.2",
+        "safetensors": "0.8.0"
+      },
+      "device": "cuda",
+      "device_name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+      "cuda_runtime": "12.8",
+      "precision": "float32",
+      "gpu_total_memory_bytes": 4294443008,
+      "cpu_threads": 4,
+      "deterministic_algorithms": true
+    },
+    "epochs_completed": 2,
+    "best_epoch": 2,
+    "validation": {
+      "loss": 0.294530319981277,
+      "total": 64,
+      "top1_correct": 58,
+      "top3_correct": 63,
+      "top1_accuracy": 0.90625,
+      "top3_accuracy": 0.984375,
+      "per_class": [
+        {
+          "label_id": 0,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 1,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 2,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 3,
+          "total": 8,
+          "correct": 6
+        },
+        {
+          "label_id": 4,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 5,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 6,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 7,
+          "total": 8,
+          "correct": 8
+        }
+      ]
+    },
+    "seconds": 6.805115000001024,
+    "reload_max_error": 0.0,
+    "trainable_count": 14570496,
+    "status": "completed",
+    "run_id": "no_decay"
+  }
+]

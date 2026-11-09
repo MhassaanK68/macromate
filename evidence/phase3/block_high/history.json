@@ -1,0 +1,222 @@
+[
+  {
+    "epoch": 1,
+    "train": {
+      "loss": 0.487146940614496,
+      "total": 280,
+      "top1_correct": 228,
+      "top3_correct": 274,
+      "top1_accuracy": 0.8142857142857143,
+      "top3_accuracy": 0.9785714285714285,
+      "per_class": [
+        {
+          "label_id": 0,
+          "total": 35,
+          "correct": 29
+        },
+        {
+          "label_id": 1,
+          "total": 35,
+          "correct": 26
+        },
+        {
+          "label_id": 2,
+          "total": 35,
+          "correct": 26
+        },
+        {
+          "label_id": 3,
+          "total": 35,
+          "correct": 22
+        },
+        {
+          "label_id": 4,
+          "total": 35,
+          "correct": 29
+        },
+        {
+          "label_id": 5,
+          "total": 35,
+          "correct": 29
+        },
+        {
+          "label_id": 6,
+          "total": 35,
+          "correct": 35
+        },
+        {
+          "label_id": 7,
+          "total": 35,
+          "correct": 32
+        }
+      ]
+    },
+    "validation": {
+      "loss": 0.271941508166492,
+      "total": 64,
+      "top1_correct": 56,
+      "top3_correct": 64,
+      "top1_accuracy": 0.875,
+      "top3_accuracy": 1.0,
+      "per_class": [
+        {
+          "label_id": 0,
+          "total": 8,
+          "correct": 6
+        },
+        {
+          "label_id": 1,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 2,
+          "total": 8,
+          "correct": 6
+        },
+        {
+          "label_id": 3,
+          "total": 8,
+          "correct": 6
+        },
+        {
+          "label_id": 4,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 5,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 6,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 7,
+          "total": 8,
+          "correct": 8
+        }
+      ]
+    },
+    "learning_rates_at_start": [
+      2.8571428571428573e-06,
+      2.8571428571428573e-06,
+      7.142857142857143e-06,
+      7.142857142857143e-06
+    ],
+    "seconds": 3.081223000001046
+  },
+  {
+    "epoch": 2,
+    "train": {
+      "loss": 0.07462385594179588,
+      "total": 280,
+      "top1_correct": 271,
+      "top3_correct": 280,
+      "top1_accuracy": 0.9678571428571429,
+      "top3_accuracy": 1.0,
+      "per_class": [
+        {
+          "label_id": 0,
+          "total": 35,
+          "correct": 33
+        },
+        {
+          "label_id": 1,
+          "total": 35,
+          "correct": 32
+        },
+        {
+          "label_id": 2,
+          "total": 35,
+          "correct": 33
+        },
+        {
+          "label_id": 3,
+          "total": 35,
+          "correct": 34
+        },
+        {
+          "label_id": 4,
+          "total": 35,
+          "correct": 35
+        },
+        {
+          "label_id": 5,
+          "total": 35,
+          "correct": 34
+        },
+        {
+          "label_id": 6,
+          "total": 35,
+          "correct": 35
+        },
+        {
+          "label_id": 7,
+          "total": 35,
+          "correct": 35
+        }
+      ]
+    },
+    "validation": {
+      "loss": 0.2824557083658874,
+      "total": 64,
+      "top1_correct": 58,
+      "top3_correct": 63,
+      "top1_accuracy": 0.90625,
+      "top3_accuracy": 0.984375,
+      "per_class": [
+        {
+          "label_id": 0,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 1,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 2,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 3,
+          "total": 8,
+          "correct": 6
+        },
+        {
+          "label_id": 4,
+          "total": 8,
+          "correct": 7
+        },
+        {
+          "label_id": 5,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 6,
+          "total": 8,
+          "correct": 8
+        },
+        {
+          "label_id": 7,
+          "total": 8,
+          "correct": 8
+        }
+      ]
+    },
+    "learning_rates_at_start": [
+      1.1736481776669307e-05,
+      1.1736481776669307e-05,
+      2.9341204441673266e-05,
+      2.9341204441673266e-05
+    ],
+    "seconds": 3.030120600000373
+  }
+]

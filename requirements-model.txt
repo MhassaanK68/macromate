@@ -1,0 +1,6 @@
+# Tested on Python 3.12.10. GPU build: torch==2.9.0+cu128.
+# Install torch first using the official CPU/CUDA wheel index (see README).
+torch==2.9.0
+transformers==4.57.1
+numpy==2.2.6
+Pillow==11.3.0

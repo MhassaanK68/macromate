@@ -1,0 +1,57 @@
+{
+  "run_id": "block_high",
+  "validation": {
+    "loss": 0.2824557083658874,
+    "total": 64,
+    "top1_correct": 58,
+    "top3_correct": 63,
+    "top1_accuracy": 0.90625,
+    "top3_accuracy": 0.984375,
+    "per_class": [
+      {
+        "label_id": 0,
+        "total": 8,
+        "correct": 7
+      },
+      {
+        "label_id": 1,
+        "total": 8,
+        "correct": 7
+      },
+      {
+        "label_id": 2,
+        "total": 8,
+        "correct": 7
+      },
+      {
+        "label_id": 3,
+        "total": 8,
+        "correct": 6
+      },
+      {
+        "label_id": 4,
+        "total": 8,
+        "correct": 7
+      },
+      {
+        "label_id": 5,
+        "total": 8,
+        "correct": 8
+      },
+      {
+        "label_id": 6,
+        "total": 8,
+        "correct": 8
+      },
+      {
+        "label_id": 7,
+        "total": 8,
+        "correct": 8
+      }
+    ]
+  },
+  "pilot_checkpoint": "runs/phase3/block_high/best.pt",
+  "reason": "Highest validation correct count; lower validation loss breaks ties; runtime breaks exact ties.",
+  "limits": "2-epoch pilot is exploratory; 64 validation images; one image is 1.5625 percentage points. Epoch cap 20, patience five, prompts and zero dropout are fixed design choices, not tuned findings.",
+  "all_candidates_completed": true
+}

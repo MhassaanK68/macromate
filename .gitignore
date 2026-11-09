@@ -1,5 +1,6 @@
 # Python and local environments
 .venv/
+runs/
 __pycache__/
 *.py[cod]
 .pytest_cache/
