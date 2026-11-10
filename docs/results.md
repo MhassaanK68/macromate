@@ -8,7 +8,7 @@ Evidence consists of training.json (settings, learning history and verification)
 
 ## Current implementation
 
-The maintained implementation is in models/; model/ is a compatibility package for historical commands. The models package contains nine Python files, including __init__.py as its package marker. config.py owns settings and evidence-file reading/writing; data.py owns dataset validation, image preprocessing and loaders; clip_classifier.py owns CLIP and checkpoint saving/loading; train.py owns training, epoch selection and checkpoint verification.
+The model implementation is in models/. The models package contains nine Python files, including __init__.py as its package marker. config.py owns settings and evidence-file reading/writing; data.py owns dataset validation, image preprocessing and loaders; clip_classifier.py owns CLIP and checkpoint saving/loading; train.py owns training, epoch selection and checkpoint verification.
 
 evaluate.py runs held-out evaluation, metrics.py implements numerical measurements, infer.py predicts dishes for new photos, and report.py builds this report from saved results. Grouping these responsibilities preserved the architecture, checkpoint format and measured results.
 

@@ -13,7 +13,7 @@ Macromate is an academic prototype for a meal-logging application. This reposito
 - [Git contribution evidence](docs/contributions.json).
 - [Download evaluated model weights (54 MB ZIP)](https://github.com/MhassaanK68/macromate/releases/download/deliverable-2-weights/macromate-deliverable2-weights.zip) and [SHA-256 checksums](https://github.com/MhassaanK68/macromate/releases/download/deliverable-2-weights/SHA256SUMS.txt). Both downloads were verified without authentication. Extract the ZIP at the repository root; download the separate pinned base-model cache using step 3 below.
 
-The maintained implementation is in models/. Historical commands using model.* still work through a compatibility package.
+The model implementation is in models/. Run commands using python -m models.<command>.
 
 Software validation is complete. Full submission readiness still requires Mohid's own coding commit and clarification of the historical manual-upload indicator; see the submission checklist.
 
@@ -224,12 +224,13 @@ pdflatex -interaction=nonstopmode -halt-on-error -jobname=Deliverable_2_Report -
 ### Software checks
 
 ```sh
-python -m unittest discover -s tests -v
 python "data scripts/verify_reproducible.py"
 python scripts/verify_dataset.py
 ```
 
-The tests cover the three-file workflow, saved-result fidelity, metric edge cases, changed artifacts, failure recording, and repeat-evaluation protection. The data reproducibility command reruns the five data steps twice and compares generated CSV, JSON, PNG, and source-audit hashes. It regenerates data outputs intentionally.
+The data reproducibility command reruns the five data steps twice and compares generated CSV, JSON, PNG, and source-audit hashes. It regenerates data outputs intentionally. The dataset verifier checks the regenerated manifests and all 400 prepared images against the recorded experiment.
+
+[Recorded software validation](docs/validation_results.json) documents the 22 regression checks, GPU training/checkpoint verification, and CPU inference checks completed for this deliverable. The regression test files are retained in Git history; the current project layout does not include a tests folder.
 
 ## Run the final model
 
@@ -299,7 +300,7 @@ data scripts/        Audit, cleaning, preprocessing, split, EDA, reproducibility
 docs/                Guides and generated reports
 figures/             EDA and model-result figures
 runs/                Local checkpoints and pretrained cache (ignored by Git)
-tests/               Regression tests
+scripts/             Contribution audit, weights packaging, dataset verification
 ```
 
 The model package contains nine Python files, including its package marker. Dataset checks are grouped with data loading, evidence helpers with configuration, checkpoint handling with the classifier, and verification with training. The old phase-specific orchestrator, pilot runner, duplicate verifier, and duplicate report exporter have been removed. Historical experiment details remain in the consolidated provenance records.
@@ -313,7 +314,7 @@ The model package contains nine Python files, including its package marker. Data
 - **Missing prepared manifests:** run data preparation before training or verification.
 - **Existing experiment/evaluation:** choose fresh directories for new work; use saved predictions for reports.
 - **Data/checkpoint mismatch:** install requirements.txt (including Pillow 13.0.0), regenerate data, then run python scripts/verify_dataset.py. PNG compression bytes can differ under Pillow 11.3.0 even with identical decoded RGB arrays. Check labels, images, preprocessing and source revision; retain the original agreement checks.
-- **`No module named model`:** run `python -m models.<command>` from the repository root.
+- **`No module named models`:** run `python -m models.<command>` from the repository root.
 
 ## Data and limitations
 

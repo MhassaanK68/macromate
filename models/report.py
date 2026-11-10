@@ -256,8 +256,8 @@ def make_report(training, evaluation, rows, output, figures):
                      "predictions.csv (every held-out prediction), and evaluation.json (protocol, metrics, reviews and model details). "
                      "This report recomputes metrics from the CSV and does not run test inference.")
     report.section("Current implementation")
-    report.paragraph("The maintained implementation is in models/; model/ is a compatibility package for "
-                     "historical commands. The models package contains nine Python files, including "
+    report.paragraph("The model implementation is in models/. "
+                     "The models package contains nine Python files, including "
                      "__init__.py as its package marker. "
                      "config.py owns settings and evidence-file reading/writing; data.py owns dataset validation, "
                      "image preprocessing and loaders; clip_classifier.py owns CLIP and checkpoint saving/loading; "

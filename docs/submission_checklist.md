@@ -8,7 +8,7 @@ on the collaboration requirements below.
 
 ## Completed technical requirements
 
-- [x] PyTorch implementation under models/, with historical model.* command compatibility.
+- [x] PyTorch implementation under models/.
 - [x] Full model/data installation through root requirements.txt, including pinned dependencies.
 - [x] Architecture, layers, trainable parameters, cross-entropy, AdamW and scheduler documented.
 - [x] Six-candidate tuning table, selection rationale and fixed design choices documented.

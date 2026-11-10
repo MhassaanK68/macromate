@@ -17,7 +17,7 @@ Macromate recognizes eight Pakistani dish categories from photos using PyTorch a
 Evidence consists of training.json (settings, learning history and verification), predictions.csv (every held-out prediction), and evaluation.json (protocol, metrics, reviews and model details). This report recomputes metrics from the CSV and does not run test inference.
 
 \Needspace{5\baselineskip}\section*{Current implementation}
-The maintained implementation is in models/; model/ is a compatibility package for historical commands. The models package contains nine Python files, including \_\_init\_\_.py as its package marker. config.py owns settings and evidence-file reading/writing; data.py owns dataset validation, image preprocessing and loaders; clip\_classifier.py owns CLIP and checkpoint saving/loading; train.py owns training, epoch selection and checkpoint verification.
+The model implementation is in models/. The models package contains nine Python files, including \_\_init\_\_.py as its package marker. config.py owns settings and evidence-file reading/writing; data.py owns dataset validation, image preprocessing and loaders; clip\_classifier.py owns CLIP and checkpoint saving/loading; train.py owns training, epoch selection and checkpoint verification.
 
 evaluate.py runs held-out evaluation, metrics.py implements numerical measurements, infer.py predicts dishes for new photos, and report.py builds this report from saved results. Grouping these responsibilities preserved the architecture, checkpoint format and measured results.
 
