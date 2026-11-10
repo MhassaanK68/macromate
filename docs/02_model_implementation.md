@@ -1,6 +1,6 @@
 # Macromate: model implementation
 
-The current implementation groups related responsibilities into **nine Python files in `model/`**, including `__init__.py`. The main development workflow is **train -> evaluate -> report**. New-photo inference runs separately.
+The current implementation groups related responsibilities into **nine Python files in `models/`**, including `__init__.py`. The main development workflow is **train -> evaluate -> report**. New-photo inference runs separately.
 
 Read [the overview](01_high_level_explaination.md) first for the project story, and [the training/testing guide](03_model_testing.md) for a complete experiment sequence. All shell commands assume the repository root and the environment described in [the README](../README.md).
 
@@ -8,11 +8,11 @@ Read [the overview](01_high_level_explaination.md) first for the project story, 
 
 ### `__init__.py`: package marker
 
-This marks `model` as a Python package so commands such as `python -m model.train` can use relative imports. It has no training or inference logic.
+This marks `model` as a Python package so commands such as `python -m models.train` can use relative imports. It has no training or inference logic.
 
 ### `config.py`: settings and experiment-file helpers
 
-[config.py](../model/config.py) contains the pinned CLIP name/revision, preprocessing constants, training defaults, directory paths, and metric definitions. It also owns JSON/CSV reading and writing for the three evidence files.
+[config.py](../models/config.py) contains the pinned CLIP name/revision, preprocessing constants, training defaults, directory paths, and metric definitions. It also owns JSON/CSV reading and writing for the three evidence files.
 
 Its helpers include `read_labels()`, `preprocessing()`, `sha256()`, `write_json()`, `read_record()`, `reserve_record()`, `write_predictions()`, and `read_predictions()`. `code_hashes()` fingerprints the eight implementation modules; `__init__.py` is only the package marker.
 
@@ -20,7 +20,7 @@ The selected defaults are block LR 2e-5, norm/projection LR 5e-5, batch size 8, 
 
 ### `data.py`: validation, preprocessing, and loaders
 
-[data.py](../model/data.py) owns both dataset checks and pixel loading:
+[data.py](../models/data.py) owns both dataset checks and pixel loading:
 
 - `read_unique()` rejects empty or repeated image IDs.
 - `load_records()` joins `clip_manifest.csv` and `split.csv`, checks `label_map.json`, validates paths and label agreement, keeps related groups in one split, and requires 35/8/7 images per dish.
@@ -32,7 +32,7 @@ Original photos receive EXIF correction, RGB conversion, bicubic shorter-side re
 
 ### `clip_classifier.py`: architecture and checkpoint handling
 
-[clip_classifier.py](../model/clip_classifier.py) implements `DishClassifier`, pretrained loading, and checkpoint saving/reconstruction.
+[clip_classifier.py](../models/clip_classifier.py) implements `DishClassifier`, pretrained loading, and checkpoint saving/reconstruction.
 
 `load_pretrained()` loads `openai/clip-vit-base-patch32` at revision `3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268` from the local `runs/hub/` cache. Download that revision before training or inference.
 
@@ -46,7 +46,7 @@ The weights remain compatible with the existing `best.pt`; grouping checkpoint f
 
 ### `train.py`: training and checkpoint verification
 
-[train.py](../model/train.py) owns both `train_run()` and `verify()`.
+[train.py](../models/train.py) owns both `train_run()` and `verify()`.
 
 `train_run()` validates fresh destinations and data, reserves `training.json`, trains using only train/validation loaders, saves improvements to `best.pt`, and records each epoch in the same JSON. It selects the highest validation top-1 count, then lower loss, retaining the earlier epoch on an exact tie. Five consecutive epochs without improvement trigger early stopping.
 
@@ -57,14 +57,14 @@ After training, `verify()` reconstructs the saved recognizer and checks checkpoi
 Verification also has a standalone mode in this module:
 
 ```sh
-python -m model.train --verify-only --evidence evidence/reproduction --device cpu
+python -m models.train --verify-only --evidence evidence/reproduction --device cpu
 ```
 
 This checks an existing experiment without running the optimizer or creating another checkpoint. It replaces the need for a separate verification script.
 
 ### `evaluate.py`: held-out evaluation
 
-[evaluate.py](../model/evaluate.py) contains `HeldOutDataset`, the evaluation protocol checks, metadata attachment, subgroup summaries, and `evaluate()`.
+[evaluate.py](../models/evaluate.py) contains `HeldOutDataset`, the evaluation protocol checks, metadata attachment, subgroup summaries, and `evaluate()`.
 
 It reads the selected checkpoint from `training.json`, requires completed training and matching verification/data/model metadata, and validates raw source labels before inference. It exclusively creates `evaluation.json` with the protocol and status `started`, then scores the reserved photos. Successful inference writes `predictions.csv` and completes `evaluation.json` with metrics, subgroups, model details, and error-review slots. A failed attempt remains recorded and blocks an accidental repeat.
 
@@ -72,19 +72,19 @@ The pre-inference protocol includes checkpoint identity, selected epoch, labels,
 
 ### `metrics.py`: numerical measurements
 
-[metrics.py](../model/metrics.py) supplies training/validation summaries, the checkpoint selection key, classification metrics, and binary ROC calculations. Evaluation and reporting reuse these definitions.
+[metrics.py](../models/metrics.py) supplies training/validation summaries, the checkpoint selection key, classification metrics, and binary ROC calculations. Evaluation and reporting reuse these definitions.
 
 It computes top-1/top-3 accuracy, confusion counts, per-class precision/recall/F1, macro/weighted averages, and one-vs-rest ROC-AUC. Tied ROC scores are grouped. AUC is undefined when a class has no positives or negatives. Softmax scores are ranking values, not calibrated confidence.
 
 ### `infer.py`: predictions for an ordinary photo
 
-[infer.py](../model/infer.py) exposes `Recognizer(checkpoint, device).predict(photo)` and the CLI. It loads the saved recognizer once, prepares each image, runs without gradients, and returns eight ranked entries containing `label_id`, `dish`, `logit`, and `score`.
+[infer.py](../models/infer.py) exposes `Recognizer(checkpoint, device).predict(photo)` and the CLI. It loads the saved recognizer once, prepares each image, runs without gradients, and returns eight ranked entries containing `label_id`, `dish`, `logit`, and `score`.
 
 Inference imports shared configuration, data transforms, and classifier/checkpoint functions. It does not import `train.py`, read evidence files, or require training images. Reuse one recognizer for multiple photos.
 
 ### `report.py`: reports from saved results
 
-[report.py](../model/report.py) reads the three evidence files, checks their identities and prediction integrity, and recomputes metrics/subgroups exactly. It does not load model weights or run inference. The original error photos are needed for their montage.
+[report.py](../models/report.py) reads the three evidence files, checks their identities and prediction integrity, and recomputes metrics/subgroups exactly. It does not load model weights or run inference. The original error photos are needed for their montage.
 
 It writes `docs/results.md`, `docs/model_report.tex`, and learning curves, confusion counts, ROC curves, and all-error figures under `figures/model/`. `--output` and `--figures` select other destinations. Missing visual error observations are labeled pending.
 

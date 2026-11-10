@@ -25,6 +25,8 @@ output/pdf/*.toc
 
 # Temporary files and system files
 tmp/
+output/weights/
+output/submission/
 .DS_Store
 Thumbs.db
 

@@ -27,10 +27,10 @@ The eight labels are chicken biryani, chicken pulao, chicken karahi, daal, nihar
 
 ## Where the code lives
 
-The `model/` package has nine Python files, including its package marker:
+The `models/` package has nine Python files, including its package marker:
 
 ```text
-model/
+models/
   __init__.py         Marks the Python package
   config.py           Settings and evidence-file reading/writing
   data.py             Dataset checks, image preparation, and loaders
@@ -56,7 +56,7 @@ The split is seeded, stratified, and group-aware. Related versions of a source p
 
 ## What the folders contain
 
-**`model/` contains executable Python code.** It describes how to train, test, save, and run the recognizer.
+**`models/` contains executable Python code.** It describes how to train, test, save, and run the recognizer.
 
 **`runs/` contains the local model files.** The recorded fine-tuned checkpoint is `runs/phase4/best.pt`, and the pinned pretrained CLIP cache is `runs/hub/`. The checkpoint stores adapted weights and needs the base cache to reconstruct the recognizer. Large weights and the cache are excluded from Git.
 
@@ -75,15 +75,15 @@ The split is seeded, stratified, and group-aware. Related versions of a source p
 After installing dependencies, downloading the pinned base, and preparing data, a new experiment follows this sequence from the repository root:
 
 ```sh
-python -m model.train --output runs/reproduction --evidence evidence/reproduction --device cpu
-python -m model.evaluate --evidence evidence/reproduction --device cpu
-python -m model.report --evidence evidence/reproduction
+python -m models.train --output runs/reproduction --evidence evidence/reproduction --device cpu
+python -m models.evaluate --evidence evidence/reproduction --device cpu
+python -m models.report --evidence evidence/reproduction
 ```
 
 Choose unused experiment directories. Training includes checkpoint verification automatically. To repeat only the validation/checkpoint check in a separate process, use:
 
 ```sh
-python -m model.train --verify-only --evidence evidence/reproduction --device cpu
+python -m models.train --verify-only --evidence evidence/reproduction --device cpu
 ```
 
 Standalone verification uses the same `train.py` file and does not retrain. Test inference is separate and refuses an existing evaluation attempt. Use saved predictions to regenerate reports.
@@ -91,7 +91,7 @@ Standalone verification uses the same `train.py` file and does not retrain. Test
 For an ordinary photo and the existing checkpoint:
 
 ```sh
-python -m model.infer runs/phase4/best.pt "path/to/meal.jpg" --device cpu
+python -m models.infer runs/phase4/best.pt "path/to/meal.jpg" --device cpu
 ```
 
 Replace the photo path with a real image. Inference needs the checkpoint and base cache; it does not read the evidence folder or need the training dataset.
@@ -102,4 +102,4 @@ The recorded checkpoint achieved 54/56 top-1 accuracy (96.43%), 56/56 top-3, mac
 
 The scores are not calibrated confidence. The recognizer does not reliably reject unfamiliar foods or support mixed plates. Labels still need a second human review, and performance on a separate Pakistani meal collection remains untested.
 
-The module consolidation preserved the original checkpoint and measured test results. The saved evaluation is in `evidence/evaluation.json`; run `python -m model.report` to generate a formatted report when needed. Historical source names in evidence describe the original experiment; the active workflow uses the nine files listed above.
+The module consolidation preserved the original checkpoint and measured test results. The saved evaluation is in `evidence/evaluation.json`; run `python -m models.report` to generate a formatted report when needed. Historical source names in evidence describe the original experiment; the active workflow uses the nine files listed above.

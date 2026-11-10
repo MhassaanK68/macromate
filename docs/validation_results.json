@@ -1,0 +1,129 @@
+{
+  "checked_at_utc": "2026-11-10T20:09:54.301715+00:00",
+  "status": "required_software_checks_passed_with_cross_device_numerical_limit",
+  "environment": {
+    "python": "3.12.14",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "torch": "2.9.0+cu128",
+      "transformers": "4.57.1",
+      "numpy": "2.2.6",
+      "Pillow": "13.0.0",
+      "huggingface-hub": "0.36.2",
+      "tokenizers": "0.22.2",
+      "safetensors": "0.8.0"
+    },
+    "device": "cuda",
+    "device_name": "NVIDIA GeForce RTX 3050 Laptop GPU",
+    "cuda_runtime": "12.8",
+    "precision": "float32",
+    "gpu_total_memory_bytes": 4294443008,
+    "cpu_threads": 6,
+    "deterministic_algorithms": false
+  },
+  "unit_tests": {
+    "passed": 22,
+    "failed": 0,
+    "command": "python -m unittest discover -s tests -v"
+  },
+  "dependencies": {
+    "pip_check": "passed",
+    "requirements_dry_run_no_index": "passed"
+  },
+  "data_reproducibility": {
+    "runs": 2,
+    "identical_output_files": 424,
+    "prepared_image_hashes_matching_recorded_experiment": 400
+  },
+  "original_checkpoint_gpu_verification": {
+    "status": "passed",
+    "checkpoint_sha256": "b9089dffbfdf8c682ed28826be143a647a24a675847ca4291bf6f061c34466e4",
+    "device": "cuda",
+    "validation_images": 64,
+    "reload_max_error": 0.0,
+    "absolute_tolerance": 1e-06,
+    "test_pixels_decoded": false,
+    "sample_image_id": "RF_CHAPATI_033d1db61524eb7e",
+    "original_photo": "data\\images\\chapati\\RF_CHAPATI_033d1db61524eb7e.jpg",
+    "sample_prediction": {
+      "scores_are_calibrated": false,
+      "score_description": "Softmax ranking over eight supported dishes",
+      "ranked_dishes": [
+        {
+          "label_id": 7,
+          "dish": "chapati",
+          "logit": 30.905160903930664,
+          "score": 0.9999855756759644
+        },
+        {
+          "label_id": 3,
+          "dish": "daal",
+          "logit": 19.750850677490234,
+          "score": 1.4313252904685214e-05
+        },
+        {
+          "label_id": 6,
+          "dish": "samosa",
+          "logit": 13.993331909179688,
+          "score": 4.5214708421781324e-08
+        },
+        {
+          "label_id": 4,
+          "dish": "nihari",
+          "logit": 13.079258918762207,
+          "score": 1.81260553233642e-08
+        },
+        {
+          "label_id": 2,
+          "dish": "chicken karahi",
+          "logit": 12.538847923278809,
+          "score": 1.0558566465590502e-08
+        },
+        {
+          "label_id": 0,
+          "dish": "chicken biryani",
+          "logit": 8.50320053100586,
+          "score": 1.8661475142955908e-10
+        },
+        {
+          "label_id": 5,
+          "dish": "haleem",
+          "logit": 7.77009391784668,
+          "score": 8.965238273983545e-11
+        },
+        {
+          "label_id": 1,
+          "dish": "chicken pulao",
+          "logit": 3.9453587532043457,
+          "score": 1.9565917896285923e-12
+        }
+      ]
+    },
+    "checked_at_utc": "2026-11-10T20:03:46.419408+00:00"
+  },
+  "one_epoch_training_smoke": {
+    "status": "completed",
+    "epochs": 1,
+    "validation_images": 64,
+    "reload_max_error": 0.0,
+    "held_out_inference_run": false
+  },
+  "cpu_cli_inference": {
+    "status": "passed",
+    "device": "cpu",
+    "original_photo": "data\\images\\chapati\\RF_CHAPATI_033d1db61524eb7e.jpg",
+    "top1_dish": "chapati",
+    "ranked_dishes": 8,
+    "max_logit_difference_from_recorded_cuda_single_image": 3.24249267578125e-05,
+    "absolute_tolerance": 0.0001
+  },
+  "cpu_validation_comparison": {
+    "images": 64,
+    "max_logit_difference": 0.32450294494628906,
+    "top1_agreement": 64,
+    "strict_tolerance": 0.0001,
+    "strict_numerical_replay_passed": false
+  },
+  "original_checkpoint_sha256": "b9089dffbfdf8c682ed28826be143a647a24a675847ca4291bf6f061c34466e4",
+  "original_evaluation_repeated": false
+}

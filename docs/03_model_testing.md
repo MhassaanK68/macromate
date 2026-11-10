@@ -1,6 +1,6 @@
 # Macromate: training and testing
 
-The model lifecycle is **train -> evaluate -> report**. The current `model/` package has nine Python files, including its package marker. Training and checkpoint verification both live in `train.py`; `clip_classifier.py` owns checkpoint saving/loading; `data.py` owns dataset checks and transforms; `config.py` owns settings and the three evidence-file helpers.
+The model lifecycle is **train -> evaluate -> report**. The current `models/` package has nine Python files, including its package marker. Training and checkpoint verification both live in `train.py`; `clip_classifier.py` owns checkpoint saving/loading; `data.py` owns dataset checks and transforms; `config.py` owns settings and the three evidence-file helpers.
 
 This guide describes the current commands, what each stage reads/writes, and how to interpret the saved result. Read [the overview](01_high_level_explaination.md) for a presentation outline and [the implementation guide](02_model_implementation.md) for all nine file responsibilities.
 
@@ -11,7 +11,7 @@ First follow [the README setup](../README.md): activate the Python environment, 
 Use fresh destinations for a new experiment:
 
 ```sh
-python -m model.train --output runs/reproduction --evidence evidence/reproduction --device cpu
+python -m models.train --output runs/reproduction --evidence evidence/reproduction --device cpu
 ```
 
 The command saves weights to `runs/reproduction/best.pt` and records training and automatic verification in `evidence/reproduction/training.json`. That JSON supplies the checkpoint path to later commands. The existing evaluated checkpoint and evidence stay at `runs/phase4/best.pt` and the root `evidence/` folder.
@@ -36,10 +36,10 @@ Training started from the pinned pretrained CLIP base, using settings selected b
 
 After training, a recognizer is reconstructed from `best.pt`. All 64 selected validation logits must reproduce within absolute tolerance `1e-6` on the same device, or `1e-4` across devices. The verifier also checks the checkpoint identity, data lineage, original-photo preprocessing, and public inference API.
 
-The `verify()` function in `model/train.py` performs this check automatically after training. An optional independent process check uses the same module:
+The `verify()` function in `models/train.py` performs this check automatically after training. An optional independent process check uses the same module:
 
 ```sh
-python -m model.train --verify-only --evidence evidence/reproduction --device cpu
+python -m models.train --verify-only --evidence evidence/reproduction --device cpu
 ```
 
 The `--verify-only` mode does not retrain, update weights, or run held-out test inference. It updates verification inside the same `training.json` and produces no additional file. The original recorded verification matched all validation logits exactly, with maximum error 0.0.
@@ -49,7 +49,7 @@ The `--verify-only` mode does not retrain, update weights, or run held-out test 
 After training and verification complete, run:
 
 ```sh
-python -m model.evaluate --evidence evidence/reproduction --device cpu
+python -m models.evaluate --evidence evidence/reproduction --device cpu
 ```
 
 The evaluator reads the selected checkpoint path from `training.json`. It checks successful training/verification, checkpoint metadata and hashes, label order, data lineage, and source-metadata joins. It then creates `evaluation.json` exclusively with status `started` and records the protocol before loading test pixels.
@@ -84,13 +84,13 @@ The two recorded errors were nihari -> chicken karahi and haleem -> chapati. Bot
 To generate reports from the existing saved analysis:
 
 ```sh
-python -m model.report
+python -m models.report
 ```
 
 For the new experiment:
 
 ```sh
-python -m model.report --evidence evidence/reproduction
+python -m models.report --evidence evidence/reproduction
 ```
 
 The report generator checks the CSV hash, model identity, test coverage, score/ranking consistency, and exact metric/subgroup reproduction. It needs the three evidence files, plus original error photos for their montage. It does not require the model weights or prepared training dataset.
@@ -102,7 +102,7 @@ The command creates `docs/results.md`, `docs/model_report.tex`, and `figures/mod
 For the recorded checkpoint:
 
 ```sh
-python -m model.infer runs/phase4/best.pt "path/to/meal.jpg" --device cpu
+python -m models.infer runs/phase4/best.pt "path/to/meal.jpg" --device cpu
 ```
 
 For your reproduction, use `runs/reproduction/best.pt` instead. Replace the image path with a real photo and retain the pinned base cache in `runs/hub/`. Inference reads the checkpoint using `clip_classifier.py` and transforms the photo using `data.py`; it does not read the evidence files or import training.

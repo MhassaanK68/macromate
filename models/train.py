@@ -223,9 +223,15 @@ def verify(evidence=EVIDENCE, device="cpu"):
     expected = torch.tensor(saved["logits"])
     same_device = payload["metadata"]["environment"]["device"] == device
     tolerance = 1e-6 if same_device else 1e-4
-    if (ids != saved["image_ids"] or targets != saved["label_ids"]
-            or not torch.allclose(logits, expected, atol=tolerance, rtol=0)):
-        raise ValueError("Fresh-process validation predictions do not reproduce saved best epoch")
+    if ids != saved["image_ids"] or targets != saved["label_ids"]:
+        raise ValueError("Fresh-process validation image IDs or labels differ from the saved epoch")
+    if not torch.allclose(logits, expected, atol=tolerance, rtol=0):
+        max_error = float((logits - expected).abs().max())
+        recorded_device = payload["metadata"]["environment"]["device"]
+        raise ValueError(f"Validation logits differ: maximum absolute error {max_error:.6g}, "
+                         f"tolerance {tolerance}; current device {device}, recorded device "
+                         f"{recorded_device}. Use the recorded device for strict numerical replay; "
+                         "cross-device inference can differ numerically.")
     metadata = read_unique(ROOT / "data" / "metadata.csv", ["image_id", "local_path"])
     sample = next(r for r in records if r["image_id"] == ids[0])
     original = ROOT / metadata[ids[0]]["local_path"]

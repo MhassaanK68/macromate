@@ -6,6 +6,15 @@ Macromate is an academic prototype for a meal-logging application. This reposito
 
 **Implemented:** data preparation, training, checkpoint verification, held-out evaluation, reports, and CLI/Python inference. The graphical interface, serving-size workflow, nutrition integration, and daily log remain future work. There is no web server to launch.
 
+## Deliverable 2 submission assets
+
+- [Phase 3-4 report (PDF)](output/pdf/Deliverable_2_Report.pdf) and [LaTeX source](docs/model_report.tex).
+- [Submission checklist and remaining requirements](docs/submission_checklist.md).
+- [Git contribution evidence](docs/contributions.json).
+- Evaluated weights: external release publication pending; the verified local package is under output/weights/.
+
+The maintained implementation is in models/. Historical commands using model.* still work through a compatibility package.
+
 ## Contents
 
 - [The simple workflow](#the-simple-workflow)
@@ -75,21 +84,21 @@ For a CPU laptop on Windows/Linux:
 ```sh
 python -m pip install --upgrade pip
 python -m pip install torch==2.9.0 --index-url https://download.pytorch.org/whl/cpu
-python -m pip install -r requirements-model.txt
+python -m pip install -r requirements.txt
 ```
 
 For macOS, install `torch==2.9.0` from the default package index instead:
 
 ```sh
 python -m pip install torch==2.9.0
-python -m pip install -r requirements-model.txt
+python -m pip install -r requirements.txt
 ```
 
 For a supported NVIDIA GPU on Windows/Linux, use the tested CUDA wheel index instead of the CPU index:
 
 ```sh
 python -m pip install torch==2.9.0 --index-url https://download.pytorch.org/whl/cu128
-python -m pip install -r requirements-model.txt
+python -m pip install -r requirements.txt
 ```
 
 Check the environment:
@@ -101,7 +110,7 @@ python -m pip check
 
 The recorded experiment used Windows 11, Python 3.12.14, PyTorch 2.9.0+cu128, and an RTX 3050 Laptop GPU with 4 GB VRAM. CPU execution is supported; Linux/macOS were not used for the recorded run. The commands below use `--device cpu`; substitute `--device cuda` where available.
 
-`requirements-model.txt` includes the model and data libraries. `requirements.txt` is an alternative for data-only work and does not install the recognizer.
+`requirements.txt` installs the complete model and data environment through `requirements-model.txt`. Pillow 13.0.0 reproduces the original prepared PNG bytes; the historical training run used Pillow 11.3.0. All 400 decoded RGB arrays were checked to be identical between those versions.
 
 ### 3. Download the pinned base model once
 
@@ -113,7 +122,7 @@ The recognizer loads only this local revision. Keep the complete `runs/hub/` cac
 
 ### 4. Choose inference or training
 
-**Use the existing model:** obtain `runs/phase4/best.pt` from the maintainers or an existing local copy, then follow [Run the final model](#run-the-final-model). Fine-tuned weights and the base cache are excluded from Git; cloning does not supply them. There is no bundled fine-tuned-weight download command.
+**Use the existing model:** download the evaluated weights linked under submission assets and extract the ZIP at the repository root, then follow [Run the final model](#run-the-final-model). Fine-tuned weights and the base cache are excluded from Git; cloning does not supply them. Keep the separate pinned base-model cache as well.
 
 **Train your own model:** prepare the included data and follow the next section. Use a fresh run and evidence directory so the existing results remain available.
 
@@ -134,7 +143,7 @@ The scripts check source hashes, clean records, flag duplicates/outliers, create
 Inspect `data/processed/split_summary.json` for **280 training / 64 validation / 56 test** photos and zero cross-split leakage. Check the model's manifest contract:
 
 ```sh
-python -c "from collections import Counter; from model.data import load_records; rows, labels = load_records(); print(Counter(r['split'] for r in rows)); print(labels)"
+python -c "from collections import Counter; from models.data import load_records; rows, labels = load_records(); print(Counter(r['split'] for r in rows)); print(labels)"
 ```
 
 Inference on a new photo does not need the training images or evidence files.
@@ -153,7 +162,7 @@ The class-ID order is: **chicken biryani, chicken pulao, chicken karahi, daal, n
 
 Training uses categorical cross-entropy without class weights or label smoothing, AdamW, 10% warmup followed by cosine decay, and gradient clipping at 1.0. Bias and normalization parameters receive no weight decay.
 
-Defaults in `model/config.py` are the previously selected pilot settings: block learning rate **2e-5**, norm/projection learning rate **5e-5**, batch size **8**, weight decay **0.01**, maximum **20 epochs**, patience **5**, seed **42**, and dropout **0**. The historical six-candidate pilot comparison is preserved inside `training.json` under `provenance`; new training no longer requires separate pilot files.
+Defaults in `models/config.py` are the previously selected pilot settings: block learning rate **2e-5**, norm/projection learning rate **5e-5**, batch size **8**, weight decay **0.01**, maximum **20 epochs**, patience **5**, seed **42**, and dropout **0**. The historical six-candidate pilot comparison is preserved inside `training.json` under `provenance`; new training no longer requires separate pilot files.
 
 ## Train, test, and report
 
@@ -162,7 +171,7 @@ Defaults in `model/config.py` are the previously selected pilot settings: block 
 Use fresh directories for a new experiment:
 
 ```sh
-python -m model.train --output runs/reproduction --evidence evidence/reproduction --device cpu
+python -m models.train --output runs/reproduction --evidence evidence/reproduction --device cpu
 ```
 
 Training saves `runs/reproduction/best.pt` and updates `evidence/reproduction/training.json`. It selects the highest validation top-1 count, then lower loss, keeping the earlier epoch on exact ties. Five epochs without improvement trigger early stopping. Test images never enter the training loaders.
@@ -170,15 +179,15 @@ Training saves `runs/reproduction/best.pt` and updates `evidence/reproduction/tr
 Training automatically reconstructs the saved checkpoint, compares all validation logits, and checks original-photo inference before marking the run completed. For a separate process check, optionally run:
 
 ```sh
-python -m model.train --verify-only --evidence evidence/reproduction --device cpu
+python -m models.train --verify-only --evidence evidence/reproduction --device cpu
 ```
 
-The verifier requires logit agreement within `1e-6` on the same device or `1e-4` across devices. Use `--epochs 1` for a short execution check, or `--config path/to/settings.json` for explicit settings. Such changes define a new experiment rather than the recorded full run.
+The verifier requires logit agreement within `1e-6` on the same device or `1e-4` across devices. For the supplied GPU-trained checkpoint, use `--device cuda` for strict replay. The submission CPU check agreed on all 64 validation top-1 labels but exceeded the strict batched-logit threshold (maximum difference 0.324503); CPU inference works, and the verifier continues to reject that numerical replay. A new CPU-trained run can be verified on CPU. Use `--epochs 1` for a short execution check, or `--config path/to/settings.json` for explicit settings. Such changes define a new experiment rather than the recorded full run.
 
 ### Evaluate
 
 ```sh
-python -m model.evaluate --evidence evidence/reproduction --device cpu
+python -m models.evaluate --evidence evidence/reproduction --device cpu
 ```
 
 This reads the checkpoint location from `training.json`, checks training/verification/data agreement, and records the evaluation protocol before inference. It then writes `predictions.csv` and completes `evaluation.json` with accuracy, precision/recall/F1, ROC-AUC, confusion counts, source/size subgroups, and model details.
@@ -190,13 +199,13 @@ The protocol and attempt status live inside `evaluation.json`; separate prepare/
 To regenerate the existing report:
 
 ```sh
-python -m model.report
+python -m models.report
 ```
 
 For a new experiment:
 
 ```sh
-python -m model.report --evidence evidence/reproduction
+python -m models.report --evidence evidence/reproduction
 ```
 
 The report checks prediction hashes, label/ranking consistency, and exact metric reproduction from the CSV. It generates `docs/results.md`, `docs/model_report.tex`, and figures under `figures/model/`, without training or test inference. It can read the three evidence files without the model weights or prepared dataset; the error montage needs the original error photos.
@@ -206,8 +215,8 @@ Review misclassified photos and add observations to `error_reviews` in `evaluati
 Report and figure destinations can be changed with `--output` and `--figures`; defaults are shared and replace generated outputs. Optional PDF compilation requires a TeX distribution with `pdflatex` on `PATH`. Create `output/pdf/` and run twice from the repository root:
 
 ```sh
-pdflatex -interaction=nonstopmode -halt-on-error -output-directory output/pdf docs/model_report.tex
-pdflatex -interaction=nonstopmode -halt-on-error -output-directory output/pdf docs/model_report.tex
+pdflatex -interaction=nonstopmode -halt-on-error -jobname=Deliverable_2_Report -output-directory output/pdf docs/model_report.tex
+pdflatex -interaction=nonstopmode -halt-on-error -jobname=Deliverable_2_Report -output-directory output/pdf docs/model_report.tex
 ```
 
 ### Software checks
@@ -215,6 +224,7 @@ pdflatex -interaction=nonstopmode -halt-on-error -output-directory output/pdf do
 ```sh
 python -m unittest discover -s tests -v
 python "data scripts/verify_reproducible.py"
+python scripts/verify_dataset.py
 ```
 
 The tests cover the three-file workflow, saved-result fidelity, metric edge cases, changed artifacts, failure recording, and repeat-evaluation protection. The data reproducibility command reruns the five data steps twice and compares generated CSV, JSON, PNG, and source-audit hashes. It regenerates data outputs intentionally.
@@ -224,7 +234,7 @@ The tests cover the three-file workflow, saved-result fidelity, metric edge case
 CLI:
 
 ```sh
-python -m model.infer runs/phase4/best.pt "path/to/meal.jpg" --device cpu
+python -m models.infer runs/phase4/best.pt "path/to/meal.jpg" --device cpu
 ```
 
 Replace the photo path with a real image. For a new experiment, use `runs/reproduction/best.pt`. Add `--prepared` only for a Phase 2 RGB 224 x 224 PNG; ordinary photos use the default preprocessing.
@@ -232,7 +242,7 @@ Replace the photo path with a real image. For a new experiment, use `runs/reprod
 Python API:
 
 ```python
-from model.infer import Recognizer
+from models.infer import Recognizer
 
 recognizer = Recognizer("runs/phase4/best.pt", device="cpu")
 result = recognizer.predict("path/to/meal.jpg")
@@ -250,7 +260,7 @@ The recorded checkpoint SHA-256 is:
 b9089dffbfdf8c682ed28826be143a647a24a675847ca4291bf6f061c34466e4
 ```
 
-Verify a copy with `python -c "from model.config import sha256; print(sha256('runs/phase4/best.pt'))"`. A newly trained checkpoint has its own identity and measurements.
+Verify a copy with `python -c "from models.config import sha256; print(sha256('runs/phase4/best.pt'))"`. A newly trained checkpoint has its own identity and measurements.
 
 ## Results
 
@@ -268,7 +278,7 @@ The two errors were nihari predicted as chicken karahi, and haleem predicted as 
 ## Files and code
 
 ```text
-model/
+models/
   __init__.py        Python package marker
   config.py          Settings and reading/writing the three evidence files
   data.py            Dataset validation, transforms, and loaders
@@ -300,8 +310,8 @@ The model package contains nine Python files, including its package marker. Data
 - **Missing `best.pt`:** obtain the evaluated weights or train a new model. Installing dependencies does not create fine-tuned weights.
 - **Missing prepared manifests:** run data preparation before training or verification.
 - **Existing experiment/evaluation:** choose fresh directories for new work; use saved predictions for reports.
-- **Data/checkpoint mismatch:** check labels, images, preprocessing, and source revision. Do not bypass agreement checks to claim a reproduction.
-- **`No module named model`:** run `python -m model.<command>` from the repository root.
+- **Data/checkpoint mismatch:** install requirements.txt (including Pillow 13.0.0), regenerate data, then run python scripts/verify_dataset.py. PNG compression bytes can differ under Pillow 11.3.0 even with identical decoded RGB arrays. Check labels, images, preprocessing and source revision; retain the original agreement checks.
+- **`No module named model`:** run `python -m models.<command>` from the repository root.
 
 ## Data and limitations
 

@@ -131,7 +131,7 @@ def resolve_checkpoint(training):
 
 
 def code_hashes():
-    return {"model/" + name: sha256(ROOT / "model" / name) for name in CORE_FILES}
+    return {"models/" + name: sha256(ROOT / "models" / name) for name in CORE_FILES}
 
 
 def test_hashes(records):

@@ -1,7 +1,11 @@
-# Tested on Python 3.12.10. GPU build: torch==2.9.0+cu128.
+# Tested on Python 3.12.14; recorded pilot used 3.12.10. GPU: torch==2.9.0+cu128.
 # Install torch first using the official CPU/CUDA wheel index (see README).
 torch==2.9.0
 transformers==4.57.1
 numpy==2.2.6
-Pillow==11.3.0
+# Matches the original prepared PNG encoding; decoded RGB tensors match 11.3.0.
+Pillow==13.0.0
 matplotlib==3.10.8
+huggingface-hub==0.36.2
+tokenizers==0.22.2
+safetensors==0.8.0

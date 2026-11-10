@@ -1,0 +1,170 @@
+{
+  "head": "55b73484b5b3c127efd4703e327045e04dcda258",
+  "collected_at_utc": "2026-11-10T19:53:44.572420+00:00",
+  "members": [
+    {
+      "student": "Hassan Mehmood (24L-2559)",
+      "git_author": "Hassan Mehmood",
+      "commit_evidence": "55b7348, 9cc1f74",
+      "modules": "models/clip_classifier.py, train.py, evaluate.py, metrics.py, infer.py",
+      "coding_status": "Code commits verified",
+      "coding_commits": [
+        {
+          "commit": "55b7348",
+          "author": "Hassan Mehmood",
+          "email": "hassaanmehmood68@gmail.com",
+          "subject": "Phase 4 results and metrics calculations",
+          "code_files": [
+            "data scripts/audit_sources.py",
+            "data scripts/split_data.py",
+            "data scripts/verify_reproducible.py",
+            "model/__init__.py",
+            "model/checkpoint.py",
+            "model/clip_classifier.py",
+            "model/config.py",
+            "model/contracts.py",
+            "model/data.py",
+            "model/evaluate.py",
+            "model/infer.py",
+            "model/metrics.py",
+            "model/pilot.py",
+            "model/report.py",
+            "model/train.py",
+            "model/verify.py",
+            "tests/test_workflow.py"
+          ],
+          "manifest_files": [
+            "data/sources.csv",
+            "evidence/phase3/tuning.csv",
+            "evidence/predictions.csv"
+          ],
+          "image_count": 4
+        },
+        {
+          "commit": "9cc1f74",
+          "author": "Hassan Mehmood",
+          "email": "hassaanmehmood68@gmail.com",
+          "subject": "Implemented Phase 3 model engine",
+          "code_files": [
+            "model/__init__.py",
+            "model/checkpoint.py",
+            "model/clip_classifier.py",
+            "model/config.py",
+            "model/contracts.py",
+            "model/data.py",
+            "model/infer.py",
+            "model/metrics.py",
+            "model/pilot.py",
+            "model/report.py",
+            "model/train.py",
+            "model/verify.py",
+            "tests/test_pipeline_edge_cases.py"
+          ],
+          "manifest_files": [
+            "evidence/phase3/tuning.csv"
+          ],
+          "image_count": 0
+        },
+        {
+          "commit": "34be01d",
+          "author": "Hassan Mehmood",
+          "email": "hassaanmehmood68@gmail.com",
+          "subject": "streamline repository and focus on core components.",
+          "code_files": [
+            "report/preview.py"
+          ],
+          "manifest_files": [],
+          "image_count": 0
+        },
+        {
+          "commit": "6586ba0",
+          "author": "Hassan Mehmood",
+          "email": "hassaanmehmood68@gmail.com",
+          "subject": "Complete data audit and technical report",
+          "code_files": [
+            "data scripts/audit_sources.py",
+            "data scripts/clean_data.py",
+            "data scripts/common.py",
+            "data scripts/eda.py",
+            "data scripts/preprocess.py",
+            "data scripts/split_data.py",
+            "data scripts/verify_reproducible.py",
+            "report/preview.py",
+            "tests/test_pipeline_edge_cases.py"
+          ],
+          "manifest_files": [
+            "data/sources.csv"
+          ],
+          "image_count": 0
+        },
+        {
+          "commit": "7d463f0",
+          "author": "Hassan Mehmood",
+          "email": "hassaanmehmood68@gmail.com",
+          "subject": "Set up Macromate Deliverable 1 repository scaffold",
+          "code_files": [
+            "data scripts/clean_data.py",
+            "data scripts/eda.py"
+          ],
+          "manifest_files": [
+            "data/metadata.csv",
+            "data/nutrition.csv",
+            "data/sources.csv"
+          ],
+          "image_count": 0
+        }
+      ],
+      "authored_commit_count": 12
+    },
+    {
+      "student": "Adnan Zaka (24i-2537)",
+      "git_author": "adnanzaka-dev",
+      "commit_evidence": "292a618, 232164f",
+      "modules": "data scripts/clean_data.py, preprocess.py, split_data.py, eda.py",
+      "coding_status": "Code commits verified",
+      "coding_commits": [
+        {
+          "commit": "292a618",
+          "author": "adnanzaka-dev",
+          "email": "zakaadnan076@gmail.com",
+          "subject": "Update cleaning and EDA for 400-image dataset",
+          "code_files": [
+            "data scripts/clean_data.py",
+            "data scripts/eda.py"
+          ],
+          "manifest_files": [],
+          "image_count": 0
+        },
+        {
+          "commit": "232164f",
+          "author": "adnanzaka-dev",
+          "email": "zakaadnan076@gmail.com",
+          "subject": "Add Phase 2 scripts",
+          "code_files": [
+            "data scripts/clean_data.py",
+            "data scripts/common.py",
+            "data scripts/eda.py",
+            "data scripts/preprocess.py",
+            "data scripts/split_data.py",
+            "data scripts/verify_reproducible.py"
+          ],
+          "manifest_files": [],
+          "image_count": 0
+        }
+      ],
+      "authored_commit_count": 11
+    },
+    {
+      "student": "Mohid Israr (24L-2510)",
+      "git_author": "Mohid Israr",
+      "commit_evidence": "8210194",
+      "modules": "data/images/, data/metadata.csv, data/sources.csv",
+      "coding_status": "No coding commit found",
+      "coding_commits": [],
+      "authored_commit_count": 1
+    }
+  ],
+  "manual_upload_indicators": [
+    "406c823"
+  ]
+}

@@ -10,12 +10,55 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
+from matplotlib.patches import FancyBboxPatch
 
 from .config import ROOT, EVIDENCE, read_record, read_predictions, sha256
 from .evaluate import subgroup_metrics
 from .metrics import classification_metrics
 
 FIGURES = ROOT / "figures" / "model"
+
+def architecture_figure(figures):
+    """Draw the actual frozen/trainable paths without requiring model loading."""
+    fig, ax = plt.subplots(figsize=(11.6, 5.5), layout="constrained")
+    ax.set(xlim=(0, 12), ylim=(0, 6))
+    ax.axis("off")
+
+    def box(x, y, width, height, title, detail, trainable=False):
+        ax.add_patch(FancyBboxPatch((x, y), width, height, boxstyle="round,pad=0.04",
+                                   facecolor="#e4efea" if trainable else "#f1f3f5",
+                                   edgecolor="#36705a" if trainable else "#59616b", linewidth=1.2))
+        ax.text(x + width / 2, y + height * 0.72, title, ha="center", va="center",
+                fontsize=10, weight="bold")
+        ax.text(x + width / 2, y + height * 0.32, detail, ha="center", va="center", fontsize=9)
+
+    def arrow(start, end):
+        ax.annotate("", xy=end, xytext=start,
+                    arrowprops=dict(arrowstyle="->", color="#404750", lw=1.4))
+
+    box(0.1, 3.75, 2.0, 1.25, "Meal photograph", "EXIF / RGB / crop\n224 x 224 x 3")
+    box(2.65, 3.75, 2.2, 1.25, "Patch embedding", "32 x 32 patches\n49 patches + CLS; d=768")
+    box(5.4, 3.75, 2.6, 1.25, "Frozen vision blocks", "Blocks 0-9; 12 heads\nHidden width 768", False)
+    box(8.6, 3.75, 3.1, 1.25, "Adapted vision path", "Blocks 10-11 + final LN\n768 -> 512 projection", True)
+    arrow((2.15, 4.38), (2.6, 4.38))
+    arrow((4.9, 4.38), (5.35, 4.38))
+    arrow((8.05, 4.38), (8.55, 4.38))
+    box(0.1, 1.55, 2.75, 1.25, "Eight fixed prompts", '"a photo of Pakistani\n[dish]"')
+    box(3.4, 1.55, 3.0, 1.25, "Frozen text encoder", "12 blocks; d=512; 8 heads\nPrecompute 8 x 512 vectors")
+    box(7.0, 1.55, 2.05, 1.25, "CLIP comparison", "L2-normalize both\nScaled dot products")
+    box(9.6, 1.55, 2.1, 1.25, "Eight dish logits", "Train: cross-entropy\nInfer: softmax + rank")
+    arrow((2.9, 2.18), (3.35, 2.18))
+    arrow((6.45, 2.18), (6.95, 2.18))
+    arrow((9.1, 2.18), (9.55, 2.18))
+    arrow((10.15, 3.7), (8.0, 2.85))
+    ax.text(9.35, 3.18, "512-d image vector", ha="center", fontsize=9)
+    ax.text(6, 5.65, "Macromate: partially fine-tuned CLIP ViT-B/32", ha="center",
+            fontsize=15, weight="bold")
+    ax.text(6, 0.65, "Green: 14,570,496 trainable parameters. Gray: fixed operations / frozen weights.\n"
+            "The text features and CLIP logit scale stay fixed; no new classification head is added.",
+            ha="center", va="center", fontsize=10)
+    fig.savefig(figures / "architecture.png", dpi=190)
+    plt.close(fig)
 
 
 def load_results(evidence):
@@ -66,6 +109,7 @@ def load_results(evidence):
 def make_figures(evidence, rows, metrics, figures):
     training = read_record(evidence / "training.json")
     figures.mkdir(parents=True, exist_ok=True)
+    architecture_figure(figures)
     history = training["history"]
     result = training["result"]
     epochs = [h["epoch"] for h in history]
@@ -145,16 +189,21 @@ class Report:
 
     def __init__(self, output, figures):
         self.output, self.figures = Path(output), Path(figures)
-        self.md = ["# Macromate: training and evaluation", ""]
-        self.tex = [r"\documentclass[11pt]{article}", r"\usepackage[margin=0.85in]{geometry}",
+        self.md = ["# Macromate: Deliverable 2", "", "Model Architecture and Empirical Evaluation", ""]
+        self.tex = [r"\documentclass[10pt,a4paper]{article}", r"\usepackage[margin=0.78in]{geometry}",
                     r"\usepackage[T1]{fontenc}", r"\usepackage{lmodern,graphicx,booktabs,tabularx,xurl}",
-                    r"\usepackage[hidelinks]{hyperref}", r"\setlength{\parindent}{0pt}",
+                    r"\usepackage{array,microtype,needspace}", r"\usepackage[hidelinks]{hyperref}",
+                    r"\setlength{\parindent}{0pt}",
                     r"\setlength{\parskip}{6pt}", r"\setlength{\emergencystretch}{3em}",
-                    r"\begin{document}", r"\section*{Macromate: training and evaluation}"]
+                    r"\begin{document}",
+                    r"{\LARGE\bfseries Macromate: Deliverable 2\par}",
+                    r"{\large Model Architecture and Empirical Evaluation\par}",
+                    r"Hassan Mehmood (24L-2559), Mohid Israr (24L-2510), Adnan Zaka (24i-2537)\par",
+                    r"\smallskip\hrule\medskip"]
 
     def section(self, title):
         self.md.extend(["## " + title, ""])
-        self.tex.append(r"\section*{" + tex_escape(title) + "}")
+        self.tex.append(r"\Needspace{5\baselineskip}\section*{" + tex_escape(title) + "}")
 
     def paragraph(self, text):
         self.md.extend([text, ""])
@@ -164,11 +213,18 @@ class Report:
         self.md.extend([f"{title}: `{value}`", ""])
         self.tex.append(tex_escape(title) + r": \path{" + value + r"}\par")
 
-    def table(self, headers, rows):
+    def link(self, title, value):
+        self.md.extend([f"[{title}]({value})", ""])
+        self.tex.append(tex_escape(title) + r": \url{" + value + r"}\par")
+
+    def table(self, headers, rows, text_columns=False):
         self.md.extend(["| " + " | ".join(headers) + " |", "| " + " | ".join(["---"] * len(headers)) + " |"])
         self.md.extend("| " + " | ".join(str(v) for v in row) + " |" for row in rows)
         self.md.append("")
-        self.tex.extend([r"\begin{center}\small", r"\begin{tabularx}{\linewidth}{X" + "r" * (len(headers) - 1) + "}",
+        columns = (r">{\raggedright\arraybackslash}X" * len(headers)
+                   if text_columns else "X" + "r" * (len(headers) - 1))
+        self.tex.extend([r"\begin{center}\footnotesize\setlength{\tabcolsep}{4pt}",
+                         r"\begin{tabularx}{\linewidth}{" + columns + "}",
                          r"\toprule", " & ".join(tex_escape(x) for x in headers) + r" \\", r"\midrule"])
         self.tex.extend(" & ".join(tex_escape(v) for v in row) + r" \\" for row in rows)
         self.tex.append(r"\bottomrule\end{tabularx}\end{center}")
@@ -178,12 +234,13 @@ class Report:
         relative = Path(os.path.relpath(path, self.output)).as_posix()
         self.md.extend([f"![{caption}]({relative})", ""])
         tex_path = path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix()
-        self.tex.extend([r"\begin{center}", r"\includegraphics[width=0.94\linewidth,height=0.48\textheight,keepaspectratio]{"
+        self.tex.extend([r"\Needspace{0.36\textheight}\begin{center}",
+                         r"\includegraphics[width=0.94\linewidth,height=0.43\textheight,keepaspectratio]{"
                          + tex_path + "}", r"\par\small " + tex_escape(caption), r"\end{center}"])
 
     def save(self):
         self.output.mkdir(parents=True, exist_ok=True)
-        (self.output / "results.md").write_text("\n".join(self.md) + "\n", encoding="utf-8", newline="\n")
+        (self.output / "results.md").write_text("\n".join(self.md).rstrip() + "\n", encoding="utf-8", newline="\n")
         (self.output / "model_report.tex").write_text("\n".join(self.tex + [r"\end{document}"]) + "\n",
                                                      encoding="utf-8", newline="\n")
 
@@ -191,11 +248,17 @@ class Report:
 def make_report(training, evaluation, rows, output, figures):
     metrics, result = evaluation["metrics"], training["result"]
     report = Report(output, figures)
+    report.paragraph("Macromate recognizes eight Pakistani dish categories from photos using PyTorch and "
+                     "a partially fine-tuned pretrained CLIP ViT-B/32. The 400-photo dataset has 50 photos "
+                     "per dish. The selected model correctly recognizes 54 of 56 held-out photos "
+                     "(96.43%); this small, source-confounded sample does not establish real-world performance.")
     report.paragraph("Evidence consists of training.json (settings, learning history and verification), "
                      "predictions.csv (every held-out prediction), and evaluation.json (protocol, metrics, reviews and model details). "
                      "This report recomputes metrics from the CSV and does not run test inference.")
     report.section("Current implementation")
-    report.paragraph("The model package contains nine Python files, including __init__.py as its package marker. "
+    report.paragraph("The maintained implementation is in models/; model/ is a compatibility package for "
+                     "historical commands. The models package contains nine Python files, including "
+                     "__init__.py as its package marker. "
                      "config.py owns settings and evidence-file reading/writing; data.py owns dataset validation, "
                      "image preprocessing and loaders; clip_classifier.py owns CLIP and checkpoint saving/loading; "
                      "train.py owns training, epoch selection and checkpoint verification.")
@@ -203,22 +266,64 @@ def make_report(training, evaluation, rows, output, figures):
                      "infer.py predicts dishes for new photos, and report.py builds this report from saved results. "
                      "Grouping these responsibilities preserved the architecture, checkpoint format and measured results.")
     report.paragraph("The development workflow is train, evaluate, then report. Training includes checkpoint verification. "
-                     "Standalone verification uses python -m model.train --verify-only with the experiment's --evidence "
+                     "Standalone verification uses python -m models.train --verify-only with the experiment's --evidence "
                      "directory; it does not retrain or score held-out photos. Inference needs best.pt and the pinned "
                      "runs/hub base cache, without reading the evidence files or importing training.")
     report.paragraph("Historical evidence retains the source-file identities and hashes recorded for the original run. "
                      "The consolidated training and evaluation records retain pilot selection and evaluation-correction "
                      "provenance. Active model commands do not require the earlier phase-specific files or an archive.")
-    report.section("Model and training")
+    report.section("Phase 3: model architecture")
+    report.figure("architecture", "Actual CLIP inference and fine-tuning paths; green modules receive gradients.")
+    report.paragraph("The vision encoder embeds 32-by-32 patches from a 224-by-224 RGB input into "
+                     "49 patch tokens plus a class token (hidden width 768). Its 12 Transformer blocks "
+                     "use 12 attention heads and a 3072-wide MLP. The class-token output passes through "
+                     "final layer normalization and a 768-to-512 visual projection. The frozen text encoder "
+                     "uses 12 blocks, hidden width 512 and eight attention heads; its projected prompt "
+                     "vectors are computed once and stored in the checkpoint.")
     report.paragraph("CLIP ViT-B/32 compares each photo with eight fixed 'a photo of Pakistani [dish]' text vectors. "
                      "Only vision blocks 10 and 11, final vision normalization and visual projection are trained. "
                      "Training uses cross-entropy, AdamW, warmup/cosine decay and gradient clipping. The pinned base revision is "
                      + training["base_model"]["revision"] + ".")
+    report.paragraph("For each class c, the logit is exp(logit_scale) times the dot product of the "
+                     "unit-length image and prompt vectors. Categorical cross-entropy compares all eight "
+                     "logits with the integer dish label; there are no class weights or label smoothing. "
+                     "Only 14,570,496 parameters are trainable. AdamW uses separate block and "
+                     "normalization/projection learning rates; biases and normalization parameters "
+                     "receive zero weight decay. Gradients are clipped to norm 1.0; learning rates use "
+                     "10% warmup followed by cosine decay. Dropout remains at the pretrained value zero.")
+    report.section("Hyperparameter tuning")
+    pilots = training.get("provenance", {}).get("pilot_results", [])
+    if pilots:
+        report.table(["Candidate", "Block LR", "Proj. LR", "Batch", "Decay", "Dropout",
+                      "Val. correct", "Val. loss"],
+                     [[p["run_id"], f'{p["settings"]["block_lr"]:.0e}',
+                       f'{p["settings"]["projection_lr"]:.0e}', p["settings"]["batch_size"],
+                       p["settings"]["weight_decay"], p["settings"]["dropout"],
+                       f'{p["validation"]["top1_correct"]}/{p["validation"]["total"]}',
+                       f'{p["validation"]["loss"]:.6f}'] for p in pilots])
+        selection = training["provenance"]["pilot_selection"]
+        report.paragraph("Six exploratory candidates were trained for two epochs each on the same "
+                         "280 training and 64 validation photos; test photos were excluded. Selection "
+                         "prioritized validation correct count, then loss, then runtime for exact ties. "
+                         "The selected candidate was " + selection["run_id"] + ": "
+                         "58/64 correct with the lowest tied-count validation loss (0.282456). "
+                         "This favors block LR 2e-5, projection LR 5e-5, batch 8 and decay 0.01. "
+                         "Batch 16 and smaller learning rates did not improve this pilot.")
+        report.paragraph("Dropout 0, maximum 20 epochs, patience 5, seed 42, fixed prompts, "
+                         "optimizer and scheduler are design choices, not demonstrated tuning winners. "
+                         "The pilot uses one seed and a short budget; one validation photo changes accuracy "
+                         "by 1.5625 percentage points. The six candidates do not establish a global optimum.")
+    else:
+        report.paragraph("No pilot comparison is present for this experiment; the settings below "
+                         "must be treated as configured choices rather than empirically tuned winners.")
+    report.section("Phase 4: training and validation")
     report.table(["Setting", "Value"], [[key, value] for key, value in training["settings"].items()])
     counts = training["counts"]
     report.paragraph(f"Fixed stratified, group-aware split: {counts['train']} training, {counts['val']} validation, "
                      f"{counts['test']} test photos. Training updates weights; validation selects the epoch; test images "
-                     "measure the selected model. The held-out results were not used for tuning.")
+                     "measure the selected model. Whole-image allocation gives 70%/16%/14% "
+                     "(35/8/7 photos per dish). Seed 42 fixes membership; exact/perceptual duplicate "
+                     "groups stay in one partition. The held-out results were not used for tuning.")
     report.paragraph(f"Completed {result['epochs_completed']} epochs; selected epoch {result['best_epoch']} by validation "
                      f"top-1 count, then lower loss, then earlier epoch. Validation top-1: "
                      f"{result['validation']['top1_correct']}/{result['validation']['total']}; "
@@ -235,8 +340,10 @@ def make_report(training, evaluation, rows, output, figures):
     report.paragraph(f"Top-1: {metrics['top1_correct']}/{metrics['total']} ({100 * metrics['top1_accuracy']:.2f}%). "
                      f"Top-3: {metrics['top3_correct']}/{metrics['total']} ({100 * metrics['top3_accuracy']:.2f}%). "
                      f"Macro F1: {metrics['macro']['f1']:.4f}.")
-    report.paragraph("The checkpoint, data hashes and evaluation rules were recorded before inference at "
-                     + evaluation["protocol"]["frozen_at_utc"] + ". Evaluation attempts, including failures, are retained; "
+    frozen = evaluation["protocol"]["frozen_at_utc"]
+    frozen_display = frozen[:10] + " at " + frozen[11:19] + " UTC"
+    report.paragraph("The checkpoint, data hashes and evaluation rules were recorded before inference on "
+                     + frozen_display + ". Evaluation attempts, including failures, are retained; "
                      "repeat evaluation in the same directory is refused. Figures and metrics reuse saved predictions.")
     decimal = lambda x: "undefined" if x is None else f"{x:.4f}"
     report.table(["Dish", "Support", "Precision", "Recall", "F1", "ROC-AUC"],
@@ -248,6 +355,12 @@ def make_report(training, evaluation, rows, output, figures):
     report.paragraph("Precision is TP/(TP+FP), recall is TP/(TP+FN), and F1 is their harmonic mean. "
                      "Macro averages weight dishes equally; weighted averages use class support. ROC-AUC measures "
                      "one-vs-rest score ranking with tied scores grouped. Scores are uncalibrated. Confusion rows are true labels.")
+    report.paragraph("Precision measures incorrect dish suggestions, recall measures missed instances of a dish, "
+                     "and F1 summarizes that tradeoff. Macro averaging gives each dish equal importance and "
+                     "would expose weak classes even if support became imbalanced. Here every class has seven "
+                     "test photos, so macro and support-weighted means coincide. One-vs-rest ROC-AUC checks "
+                     "score ranking across thresholds and complements the single top-1 decision; high AUC "
+                     "does not imply calibrated probabilities, reliable unfamiliar-food rejection, or fairness.")
     report.figure("confusion_matrix", "Held-out confusion counts: rows=true dish, columns=predicted dish.")
     report.figure("roc_curves", "One-vs-rest ROC curves from saved full-precision scores.")
     report.section("Error analysis")
@@ -259,7 +372,8 @@ def make_report(training, evaluation, rows, output, figures):
         report.paragraph("No top-1 errors occurred on this small held-out set; broader generalization is untested.")
     for row in errors:
         review = reviews.get(row["image_id"], {})
-        observation = review.get("report_summary") or "Visual review pending."
+        observation = (review.get("report_summary") or "Visual review pending.").replace(
+            "error_review.json", "evaluation.json")
         report.paragraph(f"{row['image_id']}: {row['true_dish']} predicted as {row['predicted_dish']}; "
                          f"true rank {row['true_rank']}. {observation} Source: {row['source_url']}")
     if evaluation.get("provenance", {}).get("rerun"):
@@ -279,6 +393,94 @@ def make_report(training, evaluation, rows, output, figures):
     report.paragraph("The adapted-weight checkpoint requires the pinned runs/hub base cache. "
                      "Recognizer(checkpoint, device).predict(photo) returns eight ranked dishes. Ask the user to confirm "
                      "the dish and enter serving grams before applying the separate per-100-g nutrition reference.")
+    report.paragraph("The working prototype includes preparation, training, evaluation, reports and "
+                     "CLI/Python inference. A graphical interface, serving-size workflow, nutrition "
+                     "integration and daily log are future work. The recognizer returns ranked dishes only.")
+    report.section("Contribution Table: verified Git history")
+    contribution_path = ROOT / "docs" / "contributions.json"
+    if contribution_path.is_file():
+        import json
+        contributions = json.loads(contribution_path.read_text(encoding="utf-8"))
+        report.paragraph("The table maps actual commit authors to changed files in the repository history "
+                         "at " + contributions["head"][:12] + ". It records evidence of authorship, "
+                         "not an independently verified division of effort.")
+        report.table(["Student / Git author", "Commit evidence", "Modules / coding status"],
+                     [[m["student"] + " / " + m["git_author"], m["commit_evidence"],
+                       m["modules"] + ". " + m["coding_status"]] for m in contributions["members"]],
+                     text_columns=True)
+        missing = [m["student"] for m in contributions["members"] if not m["coding_commits"]]
+        if missing:
+            report.paragraph("No coding commit was found for " + ", ".join(missing) + ". "
+                             "The visible contribution changes source photos and CSV manifests. This "
+                             "does not satisfy the guide's individual coding requirement. Each member "
+                             "must commit their own real implementation work through Git CLI or a "
+                             "desktop client. Existing shared history and author identities are preserved.")
+        else:
+            report.paragraph("Every listed member has a coding commit in the audited history. "
+                             "The recorded modules and commit authors provide the contribution evidence.")
+        if contributions.get("manual_upload_indicators"):
+            report.paragraph("Historical commit(s) "
+                             + ", ".join(contributions["manual_upload_indicators"])
+                             + " are titled 'Add files via upload'. Their presence is disclosed because "
+                             "the guide prohibits manual GitHub uploads. The historical workflow needs "
+                             "clarification with the instructor; a new CLI commit does not erase a prior "
+                             "policy issue.")
+    else:
+        report.paragraph("Git contribution snapshot is unavailable. Run scripts/collect_contributions.py "
+                         "inside the repository before preparing a submission report.")
+    report.section("Reproduction and submission assets")
+    report.paragraph("Submission checks identified a PNG-encoding dependency: preprocessing with Pillow "
+                     "11.3.0 changes the compressed bytes of some files even though all 400 decoded RGB "
+                     "arrays are identical. Pillow 13.0.0 recreates every original prepared PNG hash "
+                     "exactly. The submission requirements therefore pin Pillow 13.0.0; the original "
+                     "training environment recorded above remains unchanged in the historical evidence.")
+    report.paragraph("Install Python 3.12, the appropriate torch 2.9.0 CPU/CUDA wheel, and "
+                     "requirements.txt. Download the pinned pretrained base model using the README "
+                     "command, restore runs/phase4/best.pt, and verify its SHA-256 above. "
+                     "Run python -m models.infer CHECKPOINT PHOTO --device cpu for a new photo; "
+                     "python -m models.report regenerates this report from saved predictions.")
+    release_path = ROOT / "docs/weights_release.json"
+    if release_path.is_file():
+        import json
+        release = json.loads(release_path.read_text(encoding="utf-8"))
+        report.link("Download evaluated model weights", release["assets"][0]["url"])
+        report.paragraph("The 58,351,801-byte checkpoint is distributed in a verified ZIP through "
+                         "GitHub Releases, outside Git history. Its SHA-256 is listed above; the ZIP "
+                         "also includes a manifest, installation instructions and separate checksums.")
+    else:
+        report.paragraph("The local weights are 58,351,801 bytes and remain outside Git. A reviewer-accessible "
+                         "external download URL must be added to README.md before submission.")
+    validation_path = ROOT / "docs/validation_results.json"
+    if validation_path.is_file():
+        import json
+        checks = json.loads(validation_path.read_text(encoding="utf-8"))
+        report.section("Software verification")
+        report.paragraph(f"{checks['unit_tests']['passed']} automated tests passed. The complete data pipeline "
+                         "ran twice with 424 identical output files, and all 400 prepared image hashes match "
+                         "the recorded experiment. Dependency checks pass. A separate one-epoch GPU training "
+                         "smoke test completed, saved a checkpoint and independently reproduced all 64 "
+                         "validation rows with zero logit difference. This smoke run did not replace the "
+                         "evaluated model or use held-out inference.")
+        report.paragraph("A fresh reconstruction of the original checkpoint on the recorded GPU also "
+                         "reproduced every validation logit exactly. CPU CLI inference returned all eight "
+                         "ranked dishes and matched the recorded single-image GPU output within 1e-4.")
+        comparison = checks["cpu_validation_comparison"]
+        report.paragraph(f"Portability limit: full batched CPU replay agrees with the GPU top-1 label "
+                         f"on {comparison['top1_agreement']}/{comparison['images']} validation photos, "
+                         f"but its maximum logit difference is {comparison['max_logit_difference']:.6f}, "
+                         "exceeding the existing strict cross-device threshold of 1e-4. The strict "
+                         "verifier correctly rejects that numerical replay. Its tolerance has not been "
+                         "relaxed; use the recorded GPU device for exact reproduction. CPU inference "
+                         "remains operational. Original evaluation evidence and weights are unchanged.")
+    report.paragraph("The submission checklist records software checks and unresolved collaboration "
+                     "requirements separately from the measured experiment.")
+    report.section("References")
+    report.link("Radford et al. (2021), Learning Transferable Visual Models From Natural Language Supervision",
+                "https://arxiv.org/abs/2103.00020")
+    report.paragraph("Architecture settings are taken from the pinned CLIP config.json and the implementation "
+                     "in models/clip_classifier.py. All reported experiment measurements come from the "
+                     "three local evidence files; the pretrained CLIP architecture is adapted rather than "
+                     "introduced as a new model in this project.")
     report.save()
 
 

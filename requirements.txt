@@ -1,3 +1,2 @@
-Pillow>=10,<13
-numpy>=1.26
-matplotlib>=3.8
+# Complete Deliverable 2 environment (install the CPU/CUDA torch wheel first).
+-r requirements-model.txt
