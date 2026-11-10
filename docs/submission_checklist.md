@@ -22,8 +22,8 @@ on the collaboration requirements below.
 - [x] 424 data outputs identical across two complete runs; all 400 PNGs match original recorded hashes.
 - [x] Original GPU checkpoint reproduces all 64 saved validation logit rows with maximum difference 0.
 - [x] CPU CLI returns eight ranked classes; recorded single-image comparison passes within 1e-4.
-- [ ] Publish the verified model-weights ZIP and add its working download URL to README.
-- [ ] Commit and push the completed sources and PDF through Git CLI.
+- [x] Publish the verified model-weights ZIP and add its working download URL to README. Both weights and checksums were downloaded anonymously and their SHA-256 hashes matched.
+- [x] Commit and push the completed sources and PDF through Git CLI (implementation commit c64639b).
 
 ## Required collaboration follow-up
 
@@ -61,3 +61,5 @@ team contributions are committed.
 - Authorship evidence: [Git contribution snapshot](contributions.json).
 - Local upload asset: output/weights/macromate-deliverable2-weights.zip; validated checkpoint
   SHA-256 b9089dffbfdf8c682ed28826be143a647a24a675847ca4291bf6f061c34466e4.
+
+Published model weights: [GitHub Release](https://github.com/MhassaanK68/macromate/releases/tag/deliverable-2-weights).

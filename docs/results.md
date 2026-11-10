@@ -134,11 +134,11 @@ The working prototype includes preparation, training, evaluation, reports and CL
 
 ## Contribution Table: verified Git history
 
-The table maps actual commit authors to changed files in the repository history at 55b73484b5b3. It records evidence of authorship, not an independently verified division of effort.
+The table maps actual commit authors to changed files in the repository history at c64639b01326. It records evidence of authorship, not an independently verified division of effort.
 
 | Student / Git author | Commit evidence | Modules / coding status |
 | --- | --- | --- |
-| Hassan Mehmood (24L-2559) / Hassan Mehmood | 55b7348, 9cc1f74 | models/clip_classifier.py, train.py, evaluate.py, metrics.py, infer.py. Code commits verified |
+| Hassan Mehmood (24L-2559) / Hassan Mehmood | c64639b, 55b7348 | models/clip_classifier.py, train.py, evaluate.py, metrics.py, infer.py. Code commits verified |
 | Adnan Zaka (24i-2537) / adnanzaka-dev | 292a618, 232164f | data scripts/clean_data.py, preprocess.py, split_data.py, eda.py. Code commits verified |
 | Mohid Israr (24L-2510) / Mohid Israr | 8210194 | data/images/, data/metadata.csv, data/sources.csv. No coding commit found |
 
@@ -152,7 +152,9 @@ Submission checks identified a PNG-encoding dependency: preprocessing with Pillo
 
 Install Python 3.12, the appropriate torch 2.9.0 CPU/CUDA wheel, and requirements.txt. Download the pinned pretrained base model using the README command, restore runs/phase4/best.pt, and verify its SHA-256 above. Run python -m models.infer CHECKPOINT PHOTO --device cpu for a new photo; python -m models.report regenerates this report from saved predictions.
 
-The local weights are 58,351,801 bytes and remain outside Git. A reviewer-accessible external download URL must be added to README.md before submission.
+[Download evaluated model weights](https://github.com/MhassaanK68/macromate/releases/download/deliverable-2-weights/macromate-deliverable2-weights.zip)
+
+The 58,351,801-byte checkpoint is distributed in a verified ZIP through GitHub Releases, outside Git history. Its SHA-256 is listed above; the ZIP also includes a manifest, installation instructions and separate checksums.
 
 ## Software verification
 

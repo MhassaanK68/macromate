@@ -11,9 +11,11 @@ Macromate is an academic prototype for a meal-logging application. This reposito
 - [Phase 3-4 report (PDF)](output/pdf/Deliverable_2_Report.pdf) and [LaTeX source](docs/model_report.tex).
 - [Submission checklist and remaining requirements](docs/submission_checklist.md).
 - [Git contribution evidence](docs/contributions.json).
-- Evaluated weights: external release publication pending; the verified local package is under output/weights/.
+- [Download evaluated model weights (54 MB ZIP)](https://github.com/MhassaanK68/macromate/releases/download/deliverable-2-weights/macromate-deliverable2-weights.zip) and [SHA-256 checksums](https://github.com/MhassaanK68/macromate/releases/download/deliverable-2-weights/SHA256SUMS.txt). Both downloads were verified without authentication. Extract the ZIP at the repository root; download the separate pinned base-model cache using step 3 below.
 
 The maintained implementation is in models/. Historical commands using model.* still work through a compatibility package.
+
+Software validation is complete. Full submission readiness still requires Mohid's own coding commit and clarification of the historical manual-upload indicator; see the submission checklist.
 
 ## Contents
 

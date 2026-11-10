@@ -1,14 +1,38 @@
 {
-  "head": "55b73484b5b3c127efd4703e327045e04dcda258",
-  "collected_at_utc": "2026-11-10T19:53:44.572420+00:00",
+  "head": "c64639b0132621020cc18b84bf1a9cd510348634",
+  "collected_at_utc": "2026-11-10T20:13:29.137921+00:00",
   "members": [
     {
       "student": "Hassan Mehmood (24L-2559)",
       "git_author": "Hassan Mehmood",
-      "commit_evidence": "55b7348, 9cc1f74",
+      "commit_evidence": "c64639b, 55b7348",
       "modules": "models/clip_classifier.py, train.py, evaluate.py, metrics.py, infer.py",
       "coding_status": "Code commits verified",
       "coding_commits": [
+        {
+          "commit": "c64639b",
+          "author": "Hassan Mehmood",
+          "email": "hassaanmehmood68@gmail.com",
+          "subject": "Complete Deliverable 2 model report and validation",
+          "code_files": [
+            "model/__init__.py",
+            "models/__init__.py",
+            "models/clip_classifier.py",
+            "models/config.py",
+            "models/data.py",
+            "models/evaluate.py",
+            "models/infer.py",
+            "models/metrics.py",
+            "models/report.py",
+            "models/train.py",
+            "scripts/collect_contributions.py",
+            "scripts/package_weights.py",
+            "scripts/verify_dataset.py",
+            "tests/test_submission_report.py"
+          ],
+          "manifest_files": [],
+          "image_count": 13
+        },
         {
           "commit": "55b7348",
           "author": "Hassan Mehmood",
@@ -114,7 +138,7 @@
           "image_count": 0
         }
       ],
-      "authored_commit_count": 12
+      "authored_commit_count": 13
     },
     {
       "student": "Adnan Zaka (24i-2537)",

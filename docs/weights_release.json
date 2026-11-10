@@ -1,0 +1,20 @@
+{
+  "release_url": "https://github.com/MhassaanK68/macromate/releases/tag/deliverable-2-weights",
+  "tag": "deliverable-2-weights",
+  "assets": [
+    {
+      "name": "macromate-deliverable2-weights.zip",
+      "url": "https://github.com/MhassaanK68/macromate/releases/download/deliverable-2-weights/macromate-deliverable2-weights.zip",
+      "sha256": "364077b4d42e2c2f7077be58b7d4fe0c4baae9d6194fa53b1e6cdd657e8b447c",
+      "bytes": 54080179,
+      "anonymous_download_verified": true
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "url": "https://github.com/MhassaanK68/macromate/releases/download/deliverable-2-weights/SHA256SUMS.txt",
+      "sha256": "22a795cb1cb9b2b9b27fc451816e7b959677f6d68881bb8e52b221bd39eba5ba",
+      "bytes": 187,
+      "anonymous_download_verified": true
+    }
+  ]
+}
