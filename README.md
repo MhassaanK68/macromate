@@ -1,10 +1,67 @@
-# Macromate
+# MacroMate
 
-**Recognition of eight Pakistani dish categories from photos using a partially fine-tuned CLIP model.**
+**Photo-assisted meal logging for eight Pakistani dishes using a partially fine-tuned CLIP model.**
 
-Macromate is an academic prototype for a meal-logging application. This repository prepares the image dataset, trains and tests the recognizer, saves its weights, and runs predictions on new photos. The intended application lets users confirm a suggested dish and enter serving grams before calculating nutrition from a separate per-100-g reference.
+MacroMate is an academic meal-logging prototype. This repository prepares the image dataset, trains and tests the recognizer, saves its weights, and runs predictions on new photos. The application lets users confirm a suggested dish and enter serving grams before calculating nutrition from a separate per-100-g reference.
 
-**Implemented:** data preparation, training, checkpoint verification, held-out evaluation, reports, and CLI/Python inference. The graphical interface, serving-size workflow, nutrition integration, and daily log remain future work. There is no web server to launch.
+**Implemented:** data preparation, training, checkpoint verification, held-out evaluation, CLI/Python inference, and a Streamlit meal logger. Upload a photo, review three real model suggestions, confirm or correct the dish, enter serving grams, calculate reference nutrition, and add/export a temporary daily log.
+
+## Deliverable 3 application
+
+The interface uses a clean light dashboard with green accents. Its three views are
+**Log a meal**, **Daily log**, and **About**. Recognition supports eight dishes;
+serving grams are entered manually, and nutrition is an estimate from documented
+recipe references. Logs belong to one browser session and can disappear after
+refresh, disconnection, hibernation, or restart. Export CSV before leaving.
+
+![MacroMate dashboard](figures/app/dashboard.png)
+
+**Deployment status:** prepared for Streamlit Community Cloud; public launch
+awaits the account authorization described in the validation notes.
+
+From the project root with Python 3.12:
+
+```sh
+python -m venv .venv
+# Activate .venv with your platform's usual command.
+python -m pip install -r requirements.txt
+python scripts/prepare_app_assets.py
+python -m streamlit run app.py
+```
+
+On Windows, activation is optional: use `.venv\Scripts\python.exe` for these
+commands. The root requirements include the UI and the existing pinned model
+dependencies, with the official CPU wheel index available for hosting. Existing
+matching CUDA installations can still use the model CLI.
+
+The asset script verifies the released adapted checkpoint and pinned CLIP base
+cache. Neither weights nor cache belongs in Git. On Community Cloud the first
+recognition request also runs setup automatically, so initial startup can take
+several minutes. Errors are shown without exposing internal stack traces.
+
+- [Deployment and recovery](docs/deployment.md)
+- [Deliverable 3 validation and release status](docs/deliverable3_validation.md)
+- [Final report source](docs/final_report.tex)
+- [Final compiled report](output/pdf/MacroMate_Final_Report.pdf)
+
+### Application checks
+
+```sh
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/ -q
+python scripts/validate_app.py --output runs/app_validation.json
+```
+
+Unit and Streamlit widget tests use test-only model substitutes where appropriate;
+the separate validation command checks real CPU inference, CLI/adapter ranking
+agreement, and latency on ten non-held-out photos. These are software checks,
+not new accuracy measurements. GitHub Actions runs the automated application tests.
+
+Uploads accept actual JPEG/PNG content up to 10 MB and 25 million pixels.
+Corrupt and unsupported files are rejected. Ranking scores are uncalibrated;
+non-food photos may still receive one of the eight labels. Select **Not supported /
+cancel** instead of logging an unfamiliar dish. New photos and changed inputs
+invalidate old results, and a calculated meal can be added only once.
 
 ## Deliverable 2 submission assets
 
@@ -15,7 +72,9 @@ Macromate is an academic prototype for a meal-logging application. This reposito
 
 The model implementation is in models/. Run commands using python -m models.<command>.
 
-Software validation is complete. Full submission readiness still requires Mohid's own coding commit and clarification of the historical manual-upload indicator; see the submission checklist.
+The Deliverable 2 checklist and contribution snapshot are historical records.
+Current application verification is recorded separately in the Deliverable 3
+validation notes; authorship must follow the actual commits and team review.
 
 ## Contents
 
@@ -230,7 +289,7 @@ python scripts/verify_dataset.py
 
 The data reproducibility command reruns the five data steps twice and compares generated CSV, JSON, PNG, and source-audit hashes. It regenerates data outputs intentionally. The dataset verifier checks the regenerated manifests and all 400 prepared images against the recorded experiment.
 
-[Recorded software validation](docs/validation_results.json) documents the 22 regression checks, GPU training/checkpoint verification, and CPU inference checks completed for this deliverable. The regression test files are retained in Git history; the current project layout does not include a tests folder.
+[Recorded Deliverable 2 software validation](docs/validation_results.json) documents the 22 historical regression checks, GPU training/checkpoint verification, and CPU inference checks. The current `tests/` directory covers the new application backend, state behavior, and Streamlit UI interactions; see the separate Deliverable 3 validation notes.
 
 ## Run the final model
 
@@ -291,6 +350,9 @@ models/
   metrics.py         Classification and ROC calculations
   report.py          Reports and figures from saved predictions
   infer.py           CLI and Recognizer API
+app.py               Streamlit application entry point
+app_core/             Upload/inference adapter, nutrition, log, session workflow
+tests/                Backend, workflow, and Streamlit widget checks
 evidence/
   training.json
   predictions.csv
@@ -300,7 +362,7 @@ data scripts/        Audit, cleaning, preprocessing, split, EDA, reproducibility
 docs/                Guides and generated reports
 figures/             EDA and model-result figures
 runs/                Local checkpoints and pretrained cache (ignored by Git)
-scripts/             Contribution audit, weights packaging, dataset verification
+scripts/             Asset setup, app validation, contribution audit, dataset tools
 ```
 
 The model package contains nine Python files, including its package marker. Dataset checks are grouped with data loading, evidence helpers with configuration, checkpoint handling with the classifier, and verification with training. The old phase-specific orchestrator, pilot runner, duplicate verifier, and duplicate report exporter have been removed. Historical experiment details remain in the consolidated provenance records.
@@ -322,7 +384,7 @@ The image sources are four public Roboflow Universe datasets: IndianFoodRecog (E
 
 Source audits verify committed image hashes. Original provider archives/README files are unavailable, so their recorded archive hashes cannot be rechecked. Second human label review remains pending. Only seven test examples per dish, confounded sources/resolutions, and largely Indian/Bangladeshi appearances limit interpretation. External Pakistani meals, mixed plates, and unfamiliar-food rejection remain untested or unsupported; demographic data are unavailable.
 
-Nutrition is separate: `data/nutrition.csv` supplies per-100-g references, and the intended calculation is `value_per_100g * serving_grams / 100` after user confirmation. The inference API returns dish rankings only. Nutrition estimates depend on recipe and serving weight and are not medical advice.
+Nutrition is separate: `data/nutrition.csv` supplies per-100-g references, and `app_core/nutrition.py` calculates `value_per_100g * serving_grams / 100` after user confirmation in the UI. The inference API returns dish rankings only. Nutrition estimates depend on recipe and serving weight and are not medical advice.
 
 ## Team and guides
 

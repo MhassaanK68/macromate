@@ -1,2 +1,4 @@
-# Complete Deliverable 2 environment (install the CPU/CUDA torch wheel first).
+# CPU wheels keep hosted installs smaller; a preinstalled matching CUDA wheel is retained.
+--extra-index-url https://download.pytorch.org/whl/cpu
 -r requirements-model.txt
+streamlit==1.67.0

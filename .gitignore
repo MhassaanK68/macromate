@@ -4,6 +4,8 @@ runs/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.streamlit/secrets.toml
+.env
 
 # Raw data and generated data
 data/raw/
@@ -22,6 +24,10 @@ output/pdf/*.aux
 output/pdf/*.log
 output/pdf/*.out
 output/pdf/*.toc
+output/pdf/*.bbl
+output/pdf/*.blg
+output/pdf/*.xdv
+output/pdf/*.synctex.gz
 
 # Temporary files and system files
 tmp/

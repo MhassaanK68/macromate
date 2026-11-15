@@ -22,6 +22,8 @@ NUTRITION_CSV = Path(__file__).resolve().parent.parent / "data" / "nutrition.csv
 # A safety limit so nobody types 10000000 by mistake. This is OUR choice, not
 # an assignment rule.
 MAX_GRAMS = 5000
+SUPPORTED_LABELS = {"chicken_biryani", "chicken_pulao", "chicken_karahi", "daal",
+                    "nihari", "haleem", "samosa", "chapati"}
 
 # The CSV columns we need, and the names we give them in our results.
 NUTRIENT_COLUMNS = {
@@ -67,7 +69,12 @@ def load_nutrition_table(csv_path=NUTRITION_CSV):
     """
     table = {}
     with open(csv_path, newline="", encoding="utf-8") as file:
-        for row in csv.DictReader(file):
+        reader = csv.DictReader(file)
+        required = {"dish_label", "source", "source_id", "recipe_assumption", "quality_flag",
+                    *NUTRIENT_COLUMNS.values()}
+        if not required.issubset(reader.fieldnames or []):
+            raise NutritionError("Nutrition CSV is missing required columns")
+        for row in reader:
             dish = clean_label(row["dish_label"])
             if dish in table:
                 raise NutritionError(f"Dish '{dish}' appears twice in the nutrition CSV")
@@ -80,6 +87,8 @@ def load_nutrition_table(csv_path=NUTRITION_CSV):
             entry["recipe_assumption"] = row["recipe_assumption"]
             entry["quality_flag"] = row["quality_flag"]
             table[dish] = entry
+    if set(table) != SUPPORTED_LABELS:
+        raise NutritionError("Nutrition CSV must contain exactly the eight supported dishes")
     return table
 
 

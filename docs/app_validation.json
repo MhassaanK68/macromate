@@ -1,0 +1,120 @@
+{
+  "measured_at_utc": "2026-11-15T14:02:12.803320+00:00",
+  "source_commit": "fbbc1f469e0ea5570918b2a1ac6fa5fdd631b22f",
+  "working_tree": "See associated validation notes for uncommitted application changes",
+  "application_sha256": {
+    "app.py": "0ff71ffa0743b83f923e8d1470dd1aff97c7cff23267fc894390bed97d104c12",
+    "app_core/inference.py": "a32ae5a021248333ca4ea62e495c1f7de138a8eb295e773835347f31e81880d2",
+    "app_core/nutrition.py": "a2204c8391f82b74682f084e9e643ddcee30f126c21277ae541895b30f5bc72b",
+    "app_core/meal_log.py": "f759b181fc1f2b250baf87a699594b90b412adc791dacc411610ce0d3d9ed9ce",
+    "app_core/workflow.py": "264d72f7c956c506f3b1235fa1381e43969939e0288905e9fbfc7cfc95767792",
+    "scripts/prepare_app_assets.py": "d52ae76623e332e5e64a53453e3e58a32b6bfc23e8afd4875516430cae424bc4",
+    "requirements.txt": "a449a8efbd7b379e2f779147e651e5afd3600c298c4e6a98f16fb2e77284842c",
+    "requirements-model.txt": "0acc418cd9351bb409018d857c756a1d6ee6156b43d3317db11da5ed6740ba2c"
+  },
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.14",
+  "processor": "Intel64 Family 6 Model 126 Stepping 5, GenuineIntel",
+  "device": "cpu",
+  "checkpoint_sha256": "b9089dffbfdf8c682ed28826be143a647a24a675847ca4291bf6f061c34466e4",
+  "cold_model_load_seconds": 14.138663599995198,
+  "sample_count": 10,
+  "held_out_photos_excluded": true,
+  "untimed_warmup_count": 1,
+  "warm_median_seconds": 0.1479946999970707,
+  "warm_slowest_seconds": 0.1783166999957757,
+  "cli_adapter_ranking_agreement": true,
+  "measurements": [
+    {
+      "photo": "data/images/chapati/RF_CHAPATI_033d1db61524eb7e.jpg",
+      "seconds": 0.1783166999957757,
+      "ranked_dishes": [
+        "chapati",
+        "daal",
+        "samosa"
+      ]
+    },
+    {
+      "photo": "data/images/chicken_biryani/RF_COMBINED_0139d55c82101638.jpg",
+      "seconds": 0.16867679999268148,
+      "ranked_dishes": [
+        "chicken biryani",
+        "chicken pulao",
+        "chicken karahi"
+      ]
+    },
+    {
+      "photo": "data/images/chicken_karahi/RF_COMBINED_023543fe1238aeaa.jpg",
+      "seconds": 0.14345970000431407,
+      "ranked_dishes": [
+        "chicken karahi",
+        "chicken biryani",
+        "daal"
+      ]
+    },
+    {
+      "photo": "data/images/chicken_pulao/RF_COMBINED_18bd2d5f7ec32916.jpg",
+      "seconds": 0.1443421000003582,
+      "ranked_dishes": [
+        "chicken pulao",
+        "chicken biryani",
+        "chicken karahi"
+      ]
+    },
+    {
+      "photo": "data/images/daal/RF_CHAPATI_1e2040aff4139c65.jpg",
+      "seconds": 0.15242890000808984,
+      "ranked_dishes": [
+        "daal",
+        "chapati",
+        "haleem"
+      ]
+    },
+    {
+      "photo": "data/images/haleem/RF_COMBINED_023d02970ae566d5.jpg",
+      "seconds": 0.1366000999987591,
+      "ranked_dishes": [
+        "haleem",
+        "chicken karahi",
+        "daal"
+      ]
+    },
+    {
+      "photo": "data/images/nihari/RF_COMBINED_047f719fc672eaab.jpg",
+      "seconds": 0.15164729999378324,
+      "ranked_dishes": [
+        "nihari",
+        "chicken karahi",
+        "samosa"
+      ]
+    },
+    {
+      "photo": "data/images/samosa/RF_SAMOSA_0316192b4aa72f6c.jpg",
+      "seconds": 0.1580794000037713,
+      "ranked_dishes": [
+        "samosa",
+        "chapati",
+        "daal"
+      ]
+    },
+    {
+      "photo": "data/images/chapati/RF_CHAPATI_0cf13e075eaba5dd.jpg",
+      "seconds": 0.143132199998945,
+      "ranked_dishes": [
+        "chapati",
+        "nihari",
+        "samosa"
+      ]
+    },
+    {
+      "photo": "data/images/chicken_biryani/RF_COMBINED_037faa1464137c38.jpg",
+      "seconds": 0.14086949999909848,
+      "ranked_dishes": [
+        "chicken biryani",
+        "chicken pulao",
+        "daal"
+      ]
+    }
+  ],
+  "scope": "Software integration and latency only; not new accuracy or hosted UI latency"
+}

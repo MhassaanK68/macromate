@@ -34,7 +34,7 @@ class FakeRecognizer:
 
 @pytest.fixture
 def fake_model(monkeypatch):
-    monkeypatch.setattr(inference, "_recognizer", FakeRecognizer())
+    monkeypatch.setattr(inference, "get_recognizer", lambda: FakeRecognizer())
 
 
 def test_png_and_jpeg_are_accepted():
@@ -90,3 +90,57 @@ def test_missing_weights_give_a_clear_error(monkeypatch, tmp_path):
     monkeypatch.setattr(inference, "_recognizer", None)
     with pytest.raises(FileNotFoundError):
         inference.get_recognizer(checkpoint=tmp_path / "missing.pt")
+
+
+def test_grayscale_and_transparent_png_are_accepted():
+    for mode in ("L", "RGBA"):
+        buffer = io.BytesIO()
+        Image.new(mode, (20, 30)).save(buffer, "PNG")
+        check_image(buffer.getvalue())
+
+
+def test_recognizer_cache_tracks_checkpoint_and_device(monkeypatch, tmp_path):
+    import sys
+    import types
+
+    created = []
+    def construct(checkpoint, device):
+        instance = object()
+        created.append((checkpoint, device, instance))
+        return instance
+
+    monkeypatch.setitem(sys.modules, "models.infer", types.SimpleNamespace(Recognizer=construct))
+    monkeypatch.setattr(inference, "_recognizer", None)
+    monkeypatch.setattr(inference, "_recognizer_key", None)
+    first, second = tmp_path / "first.pt", tmp_path / "second.pt"
+    first.write_bytes(b"first")
+    second.write_bytes(b"second")
+    a = inference.get_recognizer(first)
+    assert inference.get_recognizer(first) is a
+    b = inference.get_recognizer(second)
+    assert b is not a
+    assert inference.get_recognizer(second, "cuda") is not b
+    assert len(created) == 3
+
+
+def test_shared_inference_is_serialized(monkeypatch):
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+
+    class SharedModel(FakeRecognizer):
+        active = 0
+        maximum = 0
+        def predict(self, *args, **kwargs):
+            self.active += 1
+            self.maximum = max(self.active, self.maximum)
+            time.sleep(.01)
+            result = super().predict(*args, **kwargs)
+            self.active -= 1
+            return result
+
+    shared = SharedModel()
+    monkeypatch.setattr(inference, "get_recognizer", lambda: shared)
+    content = make_image_bytes()
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        results = list(pool.map(predict_dishes, [content] * 8))
+    assert shared.maximum == 1 and len(results) == 8

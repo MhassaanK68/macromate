@@ -1,108 +1,84 @@
-"""Photo -> top 3 dish suggestions.
-
-This file is a thin wrapper around the model we already trained
-(models/infer.py). It does not contain any new model code.
-
-Typical use (from the app):
-    suggestions = predict_dishes(uploaded_bytes)
-    # [{"dish": "chicken biryani", "label": "chicken_biryani", "score": 0.93}, ...]
-
-Run all commands from the repository root, because the model finds its cache
-folder (runs/hub) relative to the project.
-"""
+"""Validated uploads and a thread-safe adapter for the existing CLIP recognizer."""
 
 import io
+import threading
+import warnings
 from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
 
-# Where the trained weights are. You get this file from the weights ZIP.
-CHECKPOINT = Path("runs/phase4/best.pt")
-
-# Upload limits. These are OUR app limits, not assignment rules.
-MAX_UPLOAD_BYTES = 10 * 1024 * 1024          # 10 MB
-MAX_IMAGE_PIXELS = 25_000_000                # width * height
+ROOT = Path(__file__).resolve().parents[1]
+CHECKPOINT = ROOT / "runs" / "phase4" / "best.pt"
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+MAX_IMAGE_PIXELS = 25_000_000
 ALLOWED_FORMATS = ("JPEG", "PNG")
 
 
 class ImageError(ValueError):
-    """Raised when the uploaded file is not a usable photo.
-
-    The app can catch this and show the message to the user.
-    """
+    """An upload cannot safely be processed."""
 
 
 def check_image(image_bytes):
-    """Check an uploaded file BEFORE running the (slow) model.
-
-    We open the real image content instead of trusting the file extension.
-    Raises ImageError with a friendly message if something is wrong.
-    """
+    """Decode actual content without trusting its filename or retaining the photo."""
     if not image_bytes:
         raise ImageError("No file was uploaded")
     if len(image_bytes) > MAX_UPLOAD_BYTES:
         raise ImageError("The file is too large (maximum 10 MB)")
-
     try:
-        with Image.open(io.BytesIO(image_bytes)) as image:
-            image_format = image.format
-            width, height = image.size
-            image.verify()                   # detects many corrupt files
-    except (UnidentifiedImageError, OSError, SyntaxError):
-        raise ImageError("This file is not a readable image")
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(io.BytesIO(image_bytes)) as image:
+                if image.format not in ALLOWED_FORMATS:
+                    raise ImageError("Only JPEG and PNG photos are supported")
+                width, height = image.size
+                if width * height > MAX_IMAGE_PIXELS:
+                    raise ImageError("The image is too large (maximum 25 million pixels)")
+                image.verify()
+            with Image.open(io.BytesIO(image_bytes)) as image:
+                image.load()
+    except (Image.DecompressionBombError, Image.DecompressionBombWarning):
+        raise ImageError("The image is too large (too many pixels)") from None
+    except (UnidentifiedImageError, OSError, SyntaxError, ValueError) as error:
+        if isinstance(error, ImageError):
+            raise
+        raise ImageError("This file is not a readable image") from None
 
-    if image_format not in ALLOWED_FORMATS:
-        raise ImageError("Only JPEG and PNG photos are supported")
-    if width * height > MAX_IMAGE_PIXELS:
-        raise ImageError("The image is too large (too many pixels)")
 
-
-# We load the model only once and remember it here, because loading is slow.
 _recognizer = None
+_recognizer_key = None
+_model_lock = threading.RLock()
 
 
 def get_recognizer(checkpoint=CHECKPOINT, device="cpu"):
-    """Load the trained model the first time, then reuse it."""
-    global _recognizer
-    if _recognizer is None:
-        # First check the weights file, so a missing file gives a clear message.
-        if not Path(checkpoint).exists():
+    """Reuse a recognizer by absolute asset identity and device; serialize loading."""
+    global _recognizer, _recognizer_key
+    with _model_lock:
+        path = Path(checkpoint).resolve()
+        if not path.is_file():
             raise FileNotFoundError(
-                f"Model weights not found at {checkpoint}. "
-                "Download the weights ZIP and extract it at the repository root."
+                "Model weights are missing. Run python scripts/prepare_app_assets.py "
+                "from the project root, then restart the application."
             )
+        stat = path.stat()
+        key = (str(path), stat.st_size, stat.st_mtime_ns, str(device))
+        if _recognizer is None or key != _recognizer_key:
+            from models.infer import Recognizer
 
-        # Imported here (not at the top) so the rest of the app and the tests
-        # still work on a computer where torch is not installed yet.
-        from models.infer import Recognizer
-
-        _recognizer = Recognizer(str(checkpoint), device=device)
-    return _recognizer
+            _recognizer = Recognizer(str(path), device=device)
+            _recognizer_key = key
+        return _recognizer
 
 
 def predict_dishes(image_bytes, top_k=3):
-    """Return the top_k most likely dishes for an uploaded photo.
-
-    Each suggestion is a dictionary:
-        dish:  the model's name, e.g. "chicken biryani"
-        label: the same name in CSV style, e.g. "chicken_biryani"
-        score: ranking score between 0 and 1
-
-    The scores are only a RANKING. They are not calibrated probabilities, so
-    the app should call them "ranking score", not "confidence" or "accuracy".
-    """
+    """Return uncalibrated rankings. Each request keeps its photo/result local."""
+    if isinstance(top_k, bool) or not isinstance(top_k, int) or not 1 <= top_k <= 8:
+        raise ValueError("top_k must be an integer from 1 to 8")
     check_image(image_bytes)
-    recognizer = get_recognizer()
-
-    # The model's loader opens the photo with PIL and does the resizing and
-    # normalising itself, so we hand it the bytes as an in-memory file.
-    result = recognizer.predict(io.BytesIO(image_bytes), prepared=False)
-
-    suggestions = []
-    for item in result["ranked_dishes"][:top_k]:
-        suggestions.append({
-            "dish": item["dish"],
-            "label": item["dish"].replace(" ", "_"),
-            "score": item["score"],
-        })
-    return suggestions
+    with _model_lock:
+        recognizer = get_recognizer()
+        result = recognizer.predict(io.BytesIO(image_bytes), prepared=False)
+    return [
+        {"dish": item["dish"], "label": item["dish"].replace(" ", "_"),
+         "score": item["score"]}
+        for item in result["ranked_dishes"][:top_k]
+    ]
