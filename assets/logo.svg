@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
+  <title id="title">MacroMate</title>
+  <desc id="desc">A leaf growing across a round plate, symbolizing food and mindful choices.</desc>
+  <rect width="96" height="96" rx="28" fill="#edf3df"/>
+  <circle cx="47" cy="50" r="29" fill="none" stroke="#194e3a" stroke-width="5"/>
+  <path d="M28 54a20 20 0 0 0 21 17" fill="none" stroke="#194e3a" stroke-width="3" stroke-linecap="round"/>
+  <path d="M46 52C43 30 57 20 78 20c1 22-10 37-32 32Z" fill="#73a05b" stroke="#edf3df" stroke-width="5" stroke-linejoin="round"/>
+  <path d="m42 59 23-25" fill="none" stroke="#194e3a" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="71" cy="73" r="5" fill="#cc9449"/>
+</svg>

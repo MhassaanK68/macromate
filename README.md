@@ -8,8 +8,12 @@ MacroMate is an academic meal-logging prototype. This repository prepares the im
 
 ## Deliverable 3 application
 
-The interface uses a clean light dashboard with green accents. Its three views are
-**Log a meal**, **Daily log**, and **About**. Recognition supports eight dishes;
+The interface opens on a branded **Home** screen with MacroMate's leaf-and-plate
+logo, a welcome area, and task shortcuts. The forest-green sidebar leads to
+**Meal Studio**, **Nutrition Guide**, **Daily Log**, and **About MacroMate**.
+Meal Studio contains the full recognition-to-log workflow; Nutrition Guide lets
+you explore recipe references and serving estimates without logging a meal.
+Recognition supports eight dishes;
 serving grams are entered manually, and nutrition is an estimate from documented
 recipe references. Logs belong to one browser session and can disappear after
 refresh, disconnection, hibernation, or restart. Export CSV before leaving.
@@ -352,6 +356,7 @@ models/
   infer.py           CLI and Recognizer API
 app.py               Streamlit application entry point
 app_core/             Upload/inference adapter, nutrition, log, session workflow
+assets/               SVG brand mark and responsive interface stylesheet
 tests/                Backend, workflow, and Streamlit widget checks
 evidence/
   training.json

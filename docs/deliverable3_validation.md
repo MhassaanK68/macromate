@@ -1,5 +1,29 @@
 # Deliverable 3 validation and release status
 
+## Branded interface revision
+
+The updated app opens on Home with a custom vector leaf-and-plate logo, a welcome
+area, and working task shortcuts. Navigation contains Home, Meal Studio, Nutrition
+Guide, Daily Log, and About MacroMate. The guide scales the existing recipe
+references by user-entered grams but does not add meals. Shared presentation is
+organized in `app_core/ui.py`; the required brand assets are `assets/logo.svg` and
+`assets/styles.css`. No UI framework or dependency was added.
+
+The revised suite passed **63 tests**, including Home/task navigation, the
+reference calculator, and the original recognition/confirmation/logging flow.
+The earlier 61-test clean-checkout and CI results below describe the original
+application release. Its real-model timings and source identities remain historical
+measurements; the visual redesign does not claim new model accuracy or latency.
+
+Browser checks covered the 1440-pixel desktop and 390-pixel mobile layouts.
+Neither page had horizontal overflow at the mobile breakpoint; nutrition metrics
+formed a readable two-column grid. Home shortcuts and the mobile sidebar reached
+the task sections. The real recognizer returned suggestions in Meal Studio;
+manual correction, confirmation, calculation, one-time addition, and the direct
+result-to-Daily-Log shortcut worked. Progress labels advanced with the workflow.
+The 150-g biryani reference explorer displayed 160.34 kcal without creating a log
+entry. Updated report screenshots use the redesigned interface.
+
 ## Scope and evidence
 
 The application extends repository baseline `fbbc1f469e0e` without retraining,
