@@ -429,6 +429,12 @@ A depth-one clean Git checkout also passed all 61 application tests without a
 local model cache or scratch files. This check reused the verified Python
 environment; public-host installation and asset downloads remain separate checks.
 
+GitHub Actions also passed dependency installation, dependency consistency, and
+the application suite on Ubuntu/Python 3.12 for application commit
+\code{52cd7ae}. This Linux check uses test doubles for model calls and does not
+replace the Windows real-model measurements or public deployment acceptance.
+The run is linked in the validation notes.
+
 \section{Limitations and future work}
 The main limits are the small and source-confounded collection, pending second
 label review, absent external-photo evaluation, unsupported mixed plates and

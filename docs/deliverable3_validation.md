@@ -27,6 +27,12 @@ no `runs/` directory, local model assets, or scratch files present, and remained
 clean afterward. It reused the already verified Python environment; it was not a
 second dependency installation or a fresh public-host asset download.
 
+Linux CI also passed for application commit `52cd7ae`: Ubuntu, Python 3.12,
+installation from `requirements-dev.txt`, `pip check`, and the complete test suite.
+The [GitHub Actions run](https://github.com/MhassaanK68/macromate/actions/runs/43722832803)
+is separate from Windows timing and real-model evidence; it does not load the
+released weights or establish hosted-app performance.
+
 | Area | Verified behavior |
 | --- | --- |
 | Nutrition | All eight unique label joins; 100 g, 150 g, fractional servings; full-precision arithmetic; source notes |
