@@ -6,7 +6,7 @@
   "functions": {
     "server.py": {
       "maxDuration": 300,
-      "includeFiles": "{app.py,app_core/**,assets/**,.streamlit/config.toml,data/nutrition.csv,data/images/chicken_biryani/RF_COMBINED_0139d55c82101638.jpg,models/**,scripts/prepare_app_assets.py,runs/phase4/best.pt,runs/app_assets.json,runs/hub/**}",
+      "includeFiles": "{app.py,app_core/**,assets/**,.streamlit/config.toml,data/nutrition.csv,models/**,scripts/prepare_app_assets.py,runs/phase4/best.pt,runs/app_assets.json,runs/hub/**}",
       "excludeFiles": "{tests/**,docs/**,evidence/**,figures/**,output/**,.github/**,**/__pycache__/**,**/*.pyc}"
     }
   }

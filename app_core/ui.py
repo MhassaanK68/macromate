@@ -33,10 +33,6 @@ def asset_uri(path):
     return f"data:{mime};base64," + base64.b64encode(path.read_bytes()).decode()
 
 
-def dish_photo(label):
-    return next(iter(sorted((ROOT / "data" / "images" / label).glob("*.jpg"))), None)
-
-
 def navigate(page):
     st.session_state.workspace = page
 
@@ -99,10 +95,8 @@ def home(flow, labels, start_meal):
                 st.button("Start a meal", key="hero_start", type="primary", icon=":material/arrow_forward:", on_click=start_meal)
             st.button("See my day", key="hero_day", on_click=navigate, args=("My day",))
         with visual:
-            photo = dish_photo("chicken_biryani")
-            if photo:
-                st.markdown(f'<div class="hero-visual"><img class="hero-meal" src="{asset_uri(photo)}" '
-                            'alt="A plate of chicken biryani"></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="hero-visual"><img class="hero-meal" src="{asset_uri(ROOT / "assets/meal.jpg")}" '
+                        'alt="A plate of chicken biryani"></div>', unsafe_allow_html=True)
     st.markdown('<div class="simple-how"><span><b>1</b> Add a photo</span><span><b>2</b> Check your portion</span>'
                 '<span><b>3</b> Save your meal</span></div>', unsafe_allow_html=True)
     entries = flow.log.entries_for(date.today())

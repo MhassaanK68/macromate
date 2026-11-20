@@ -5,11 +5,15 @@
 The `server:app` entry point exposes the same Streamlit UI through `st.App`
 and ASGI. `pyproject.toml` selects that entry point, `.python-version` pins 3.12,
 and `vercel.json` selects Python with Fluid Compute and a 300-second duration.
+The hosting manifest pins the same dependencies as the requirements files and
+selects CPU PyTorch through uv's explicit package index. Streamlit production
+mode is set explicitly because Vercel vendors packages outside `site-packages`.
 `buildCommand` downloads and verifies model assets before they are bundled;
 runtime initialization verifies the bundle offline. Weights remain outside Git.
 The upload limit is 4 MB for this entry point to fit Vercel's request-body limit.
-`.vercelignore` excludes experiments, reports, tests, local caches, and all but
-the one existing dataset image used by Home. Attribution CSVs remain included.
+`.vercelignore` excludes experiments, reports, tests, local caches, and dataset
+images. Home's required `assets/meal.jpg` is the existing dataset photo
+`RF_COMBINED_0139d55c82101638.jpg`; attribution CSVs remain included.
 
 Import `MhassaanK68/macromate` into the intended Vercel account, using the
 repository root. Enable **Fluid Compute / Active CPU** and **Large Functions**
@@ -17,6 +21,13 @@ repository root. Enable **Fluid Compute / Active CPU** and **Large Functions**
 Python bundle size. New projects are eligible for Large Functions by default.
 Keep Python 3.12 and at least the default 2 GB function memory, then deploy.
 Do not mark this deployment live until the real-photo acceptance checks pass.
+
+The live URL is [macromate-nu.vercel.app](https://macromate-nu.vercel.app).
+The production deployment was created with the authorized Vercel CLI. Automatic
+deployments from GitHub pushes are not connected: the Vercel account needs a
+GitHub login connection before that integration can be enabled. After signing
+in with `vercel login`, use `vercel deploy --prod --yes` from the project root
+for a manual release; `.vercel/` account/project metadata stays outside Git.
 
 Vercel's WebSocket and Large Functions features are currently public beta.
 Connections end at the function duration limit, and reconnection may reach a

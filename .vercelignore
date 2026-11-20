@@ -14,7 +14,4 @@ output/
 runs/
 data/raw/
 data/processed/
-data/images/*
-!data/images/chicken_biryani/
-data/images/chicken_biryani/*
-!data/images/chicken_biryani/RF_COMBINED_0139d55c82101638.jpg
+data/images/

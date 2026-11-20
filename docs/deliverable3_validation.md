@@ -10,10 +10,10 @@ shows its next action. Optional rankings, sources, and meal dates are collapsed.
 Drafts survive section changes in the current session, errors offer explicit
 retry, saved meals cannot be added twice, and removal offers Undo. The guide
 scales recipe references by user-entered grams without logging. Shared presentation is
-organized in `app_core/ui.py`; the required brand assets are `assets/logo.svg` and
-`assets/styles.css`. No UI framework or dependency was added.
+organized in `app_core/ui.py`; required presentation assets are `assets/logo.svg`,
+`assets/styles.css`, and `assets/meal.jpg`. No UI framework or dependency was added.
 
-The revised suite passed **70 tests**; `pip check` found no broken requirements.
+The revised suite passed **71 tests**; `pip check` found no broken requirements.
 Checks cover staged confirmation, navigation/draft recovery, failed inference
 retry without repeated automatic calls, invalid/unsupported inputs, single-save
 behavior, and removal/undo. Test-only model doubles remain confined to tests.
@@ -132,18 +132,28 @@ checks. One regression test verifies the hosting upload limit; the model and
 experiment evidence are unchanged. See `docs/deployment.md` for build packaging,
 Large Functions/Fluid requirements, and bounded WebSocket session lifetime.
 
-Public deployment is awaiting account authorization. The installed Vercel CLI
-reported `login_required`. Browser sign-in reached the existing GitHub account
-picker, but automatic approval review rejected continuing because it would
-authorize profile/email access for Vercel. No new access was granted. This step
-needs explicit user approval. No public URL, cloud build, host restart result,
-or independent usability review is claimed until observed.
+**Live URL:** [macromate-nu.vercel.app](https://macromate-nu.vercel.app).
+The user authorized Vercel CLI access and production deployment. The cloud build
+installed the pinned CPU dependencies, provisioned and verified both model assets,
+and enabled Large Functions. Dependency-manifest and vendored development-mode
+issues found during deployment were corrected; a regression check keeps pip and
+uv runtime pins aligned. The production entry point uses explicit production mode.
 
-Local model, browser, export, and separate-tab checks above are complete. Remaining
-host acceptance checks are: deploy on Vercel, repeat the workflow after
-a host restart, inspect resource use, verify independent users/sessions, and record
-the public URL and deployed commit. Portal submission and viva participation
-remain the team's responsibility.
+Hosted browser acceptance on 20 November completed a real non-held-out biryani
+upload, automatic recognition, manual correction to karahi at 150 g, confirmation,
+single save, My day totals, CSV download, removal, and Undo. The downloaded row
+matched karahi, 150 g, NUT03, 156.88 kcal, 23.94 g protein, 2.25 g carbohydrate,
+and 5.69 g fat. No fake model mode was used. This is functional acceptance, not
+a new accuracy measurement or an independent user study.
+
+The CLI deployment is manual. Automatic GitHub deployment remains unconnected
+because the Vercel account needs a GitHub login connection. No broader GitHub
+repository permissions were granted by this work.
+
+Local model, browser, export, and separate-tab checks above are complete. Hosted
+functional acceptance is recorded above. Load/resource measurements and independent
+human usability review remain future checks; no production-scale guarantee is
+claimed. Portal submission and viva participation remain the team's responsibility.
 
 ## Repository hygiene
 

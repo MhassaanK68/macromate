@@ -42,7 +42,7 @@ Adnan Zaka & 24i-2537
 \vfill
 Repository: \url{https://github.com/MhassaanK68/macromate}\\
 Prepared: 20 November 2026\\
-Deployment target: Vercel (account authorization pending)
+Live app: \url{https://macromate-nu.vercel.app}
 \end{titlepage}
 \hypersetup{pageanchor=true}
 \pagenumbering{roman}
@@ -440,15 +440,15 @@ hashes, checkpoint identity, and environment are retained in
 
 \begin{center}\begin{tabularx}{\linewidth}{Xr}
 \toprule Local software measurement & Observed result\\\midrule
-Automated application tests (20 November) & 70 passed\\
+Automated application tests (20 November) & 71 passed\\
 Dependency consistency & No broken requirements\\
 Cold model initialization (including imports) & 14.139 s\\
 Warm adapter inference, median of ten & 0.148 s\\
 Warm adapter inference, slowest of ten & 0.178 s\\
 \bottomrule\end{tabularx}\end{center}
 Downloads, UI interaction, and network latency are excluded. These figures do not
-guarantee hosted performance. Public-host checks remain subject to the
-account authorization and deployment evidence recorded in the release notes.
+guarantee hosted performance. Hosted acceptance is recorded separately in the
+release notes; these timings remain local measurements from 15 November.
 
 A depth-one clean Git checkout also passed all 61 application tests without a
 local model cache or scratch files. This check reused the verified Python
@@ -460,11 +460,11 @@ the application suite on Ubuntu/Python 3.12 for application commit
 replace the Windows real-model measurements or public deployment acceptance.
 The run is linked in the validation notes.
 
-The simplified-interface revision passed 70 local tests, including automatic
-recognition, explicit confirmation, draft recovery, retry, single-save behavior,
-unsupported food, and removal/undo. Desktop and mobile layouts were reviewed
-separately with a real non-held-out photo. The timing table retains the earlier
-real-model measurements; the UX revision did not retrain or repeat held-out evaluation.
+The simplified interface passed 71 tests, including draft recovery, retry,
+single-save behavior, and deployment dependency consistency. Desktop/mobile
+layouts were reviewed. At \url{https://macromate-nu.vercel.app}, real-photo
+recognition, manual correction, confirmation, saving, CSV export, and removal/undo
+passed. The UX revision did not retrain or repeat held-out evaluation.
 
 \section{Limitations and future work}
 The main limits are the small and source-confounded collection, pending second

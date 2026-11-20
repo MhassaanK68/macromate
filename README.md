@@ -23,9 +23,9 @@ refresh, disconnection, hibernation, or restart. Export CSV before leaving.
 
 ![MacroMate dashboard](figures/app/dashboard.png)
 
-**Deployment status:** Vercel is the requested hosting target. The Python/ASGI
-entry point and model build are configured; public launch awaits account
-authorization and hosted acceptance checks. Community Cloud remains an alternative.
+**Live app:** [macromate-nu.vercel.app](https://macromate-nu.vercel.app).
+The Vercel deployment has passed real-photo recognition, correction, saving,
+CSV export, and removal/undo checks. Logs are temporary; download a copy to keep them.
 
 From the project root with Python 3.12:
 
