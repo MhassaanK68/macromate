@@ -2,11 +2,24 @@
 
 import io
 import json
+import tomllib
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 from scripts import prepare_app_assets as assets
+
+
+def test_vercel_installs_the_same_pinned_runtime_dependencies():
+    """Vercel prioritizes pyproject over requirements; neither may drift."""
+    root = Path(__file__).resolve().parents[1]
+    manifest = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    expected = set()
+    for filename in ("requirements.txt", "requirements-model.txt"):
+        expected.update(line.strip() for line in (root / filename).read_text().splitlines()
+                        if "==" in line and not line.startswith("#"))
+    assert set(manifest["project"]["dependencies"]) == expected
 
 
 def local_assets(monkeypatch, tmp_path):

@@ -1,2 +1,26 @@
+[project]
+name = "macromate"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "streamlit==1.67.0",
+  "torch==2.9.0",
+  "transformers==4.57.1",
+  "numpy==2.2.6",
+  "Pillow==13.0.0",
+  "matplotlib==3.10.8",
+  "huggingface-hub==0.36.2",
+  "tokenizers==0.22.2",
+  "safetensors==0.8.0",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
 [tool.vercel]
 entrypoint = "server:app"

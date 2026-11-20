@@ -1,3 +1,7 @@
+[global]
+# Vercel vendors packages outside site-packages; serve Streamlit's built frontend.
+developmentMode = false
+
 [theme]
 base = "light"
 primaryColor = "#235C41"
