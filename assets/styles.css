@@ -52,6 +52,7 @@ p { line-height: 1.65; }
 [data-testid="stButton"] button, [data-testid="stDownloadButton"] button { min-height: 47px; border-radius: 10px !important; border-color: #d8e2ce; font-size: .9rem !important; font-weight: 600; }
 [data-testid="stButton"] button[kind="primary"] { background: var(--green); border-color: var(--green); color: white; }
 [data-testid="stButton"] button[kind="primary"]:hover { background: #184a33; border-color: #184a33; }
+[data-testid="stSidebar"] [data-testid="stButton"] button[kind="primary"]:hover { background: #dde9d0; border-color: #dde9d0; color: #204d34; }
 [data-testid="stButton"] button:focus-visible { outline: 3px solid #99bd77; outline-offset: 3px; }
 [data-testid="stTextInput"] input, [data-testid="stNumberInput"] input { font-size: 1rem; }
 [data-testid="stExpander"] { border-radius: 11px; }
