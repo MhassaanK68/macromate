@@ -1,5 +1,6 @@
 # Python and local environments
 .venv/
+.vercel/
 runs/
 __pycache__/
 *.py[cod]

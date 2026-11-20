@@ -4,15 +4,18 @@
 
 MacroMate is an academic meal-logging prototype. This repository prepares the image dataset, trains and tests the recognizer, saves its weights, and runs predictions on new photos. The application lets users confirm a suggested dish and enter serving grams before calculating nutrition from a separate per-100-g reference.
 
-**Implemented:** data preparation, training, checkpoint verification, held-out evaluation, CLI/Python inference, and a Streamlit meal logger. Upload a photo, review three real model suggestions, confirm or correct the dish, enter serving grams, calculate reference nutrition, and add/export a temporary daily log.
+**Implemented:** data preparation, training, checkpoint verification, held-out evaluation, CLI/Python inference, and a Streamlit meal logger. Upload a photo for automatic recognition, check the dish and serving grams, review the nutrition estimate, and save/export a temporary daily log.
 
 ## Deliverable 3 application
 
 The interface opens on a branded **Home** screen with MacroMate's leaf-and-plate
-logo, a welcome area, and task shortcuts. The forest-green sidebar leads to
-**Meal Studio**, **Nutrition Guide**, **Daily Log**, and **About MacroMate**.
-Meal Studio contains the full recognition-to-log workflow; Nutrition Guide lets
-you explore recipe references and serving estimates without logging a meal.
+logo and one main **Start a meal** action. The forest-green sidebar keeps three
+main sections: **Home**, **Add a meal**, and **My day**. **Food guide** and **About**
+are under **More**. Add a meal guides you through photo, dish/portion, and review;
+recognition starts automatically and confirmation also calculates nutrition.
+Unfinished meals survive section changes within the session. My day offers
+date totals, CSV export, and Undo for the latest removal. Food guide lets you
+explore recipe references and serving estimates without logging a meal.
 Recognition supports eight dishes;
 serving grams are entered manually, and nutrition is an estimate from documented
 recipe references. Logs belong to one browser session and can disappear after
@@ -20,8 +23,9 @@ refresh, disconnection, hibernation, or restart. Export CSV before leaving.
 
 ![MacroMate dashboard](figures/app/dashboard.png)
 
-**Deployment status:** prepared for Streamlit Community Cloud; public launch
-awaits the account authorization described in the validation notes.
+**Deployment status:** Vercel is the requested hosting target. The Python/ASGI
+entry point and model build are configured; public launch awaits account
+authorization and hosted acceptance checks. Community Cloud remains an alternative.
 
 From the project root with Python 3.12:
 
@@ -61,10 +65,11 @@ the separate validation command checks real CPU inference, CLI/adapter ranking
 agreement, and latency on ten non-held-out photos. These are software checks,
 not new accuracy measurements. GitHub Actions runs the automated application tests.
 
-Uploads accept actual JPEG/PNG content up to 10 MB and 25 million pixels.
+Uploads accept actual JPEG/PNG content up to 10 MB (4 MB through the Vercel
+entry point) and 25 million pixels.
 Corrupt and unsupported files are rejected. Ranking scores are uncalibrated;
-non-food photos may still receive one of the eight labels. Select **Not supported /
-cancel** instead of logging an unfamiliar dish. New photos and changed inputs
+non-food photos may still receive one of the eight labels. Select **My dish isn’t
+listed** for an unfamiliar dish. New photos and changed inputs
 invalidate old results, and a calculated meal can be added only once.
 
 ## Deliverable 2 submission assets

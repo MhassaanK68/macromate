@@ -64,3 +64,27 @@ def test_cancel_and_independent_sessions():
     a.cancel()
     assert a.estimate is None and a.confirmed_dish is None
     assert b.log.entries == [] and b.suggestions == []
+
+
+def test_remove_and_undo_preserve_identity_order_and_totals():
+    flow = ready()
+    first = flow.add(date.today())
+    second = flow.log.add(flow.estimate, date.today())
+    before = flow.log.totals_for(date.today())
+    assert flow.remove(first["entry_id"])
+    assert not flow.added and flow.estimate is None
+    assert [entry["entry_id"] for entry in flow.log.entries] == [second["entry_id"]]
+    assert flow.undo_remove()
+    assert [entry["entry_id"] for entry in flow.log.entries] == [first["entry_id"], second["entry_id"]]
+    assert flow.log.totals_for(date.today()) == before
+    assert not flow.undo_remove()
+
+
+def test_undo_is_session_local_and_unknown_remove_is_harmless():
+    flow = ready()
+    entry = flow.add(date.today())
+    assert flow.remove(entry["entry_id"])
+    assert not flow.remove("missing")
+    other = MealWorkflow()
+    assert not other.undo_remove()
+    assert flow.undo_remove()

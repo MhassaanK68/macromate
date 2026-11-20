@@ -16,6 +16,7 @@ class MealWorkflow:
     entry_id: str | None = None
     added: bool = False
     log: MealLog = field(default_factory=MealLog)
+    removed_entry: tuple | None = None
 
     def set_image(self, content):
         identity = sha256(content).hexdigest() if content else None
@@ -72,3 +73,23 @@ class MealWorkflow:
         entry = self.log.add(self.estimate, meal_date, entry_id=self.entry_id)
         self.added = True
         return entry
+
+    def remove(self, entry_id):
+        """Keep the last removed entry so a mistaken tap can be undone."""
+        for index, entry in enumerate(self.log.entries):
+            if entry["entry_id"] == entry_id:
+                self.removed_entry = (index, dict(entry))
+                self.log.remove(entry_id)
+                if self.entry_id == entry_id:
+                    self.cancel()
+                return True
+        return False
+
+    def undo_remove(self):
+        if self.removed_entry is None:
+            return False
+        index, entry = self.removed_entry
+        if not any(item["entry_id"] == entry["entry_id"] for item in self.log.entries):
+            self.log.entries.insert(min(index, len(self.log.entries)), entry)
+        self.removed_entry = None
+        return True

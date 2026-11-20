@@ -1,5 +1,40 @@
 # Application deployment
 
+## Vercel (requested hosting target)
+
+The `server:app` entry point exposes the same Streamlit UI through `st.App`
+and ASGI. `pyproject.toml` selects that entry point, `.python-version` pins 3.12,
+and `vercel.json` selects Python with Fluid Compute and a 300-second duration.
+`buildCommand` downloads and verifies model assets before they are bundled;
+runtime initialization verifies the bundle offline. Weights remain outside Git.
+The upload limit is 4 MB for this entry point to fit Vercel's request-body limit.
+`.vercelignore` excludes experiments, reports, tests, local caches, and all but
+the one existing dataset image used by Home. Attribution CSVs remain included.
+
+Import `MhassaanK68/macromate` into the intended Vercel account, using the
+repository root. Enable **Fluid Compute / Active CPU** and **Large Functions**
+(`VERCEL_SUPPORT_LARGE_FUNCTIONS=1`) because PyTorch and CLIP exceed the standard
+Python bundle size. New projects are eligible for Large Functions by default.
+Keep Python 3.12 and at least the default 2 GB function memory, then deploy.
+Do not mark this deployment live until the real-photo acceptance checks pass.
+
+Vercel's WebSocket and Large Functions features are currently public beta.
+Connections end at the function duration limit, and reconnection may reach a
+different instance. This session-local app can therefore lose its temporary log;
+CSV export is necessary for keeping meals. Test upload/media/CSV requests under
+actual hosted instance routing, not only the homepage. A successful build alone
+does not verify the complete app.
+
+Official references: [Python runtime](https://vercel.com/docs/functions/runtimes/python),
+[WebSockets](https://vercel.com/kb/guide/do-vercel-serverless-functions-support-websocket-connections),
+and [function limits](https://vercel.com/docs/functions/limitations).
+
+For the exact serving entry point locally:
+
+```sh
+python -m uvicorn server:app --host 127.0.0.1 --port 8502
+```
+
 ## Streamlit Community Cloud
 
 Deploy the existing GitHub repository, not a separately uploaded copy:
@@ -70,9 +105,10 @@ do not disable verification. Do not delete or overwrite recorded experiment evid
 ## Release acceptance
 
 After deployment, use a fresh browser session to upload a supported photo,
-recognize it, select a different supported dish, confirm it, enter 150 g, calculate,
-add once, and export the log. Change the grams and verify the old result disappears.
-Test a corrupt upload, cancel an unsupported dish, and remove a meal. Open a second
+recognize it automatically, select a different supported dish, enter 150 g,
+confirm to calculate, save once, and export the log. Edit the serving and verify
+the previous estimate is cleared. Test a corrupt upload, select an unsupported
+dish, and remove/undo a meal. Open a second
 independent session and verify its empty log. Restart the service and repeat
 recognition to check asset provisioning on the host. Record the actual app URL,
 deployed commit, date, resource readings, and observed timings in validation notes.

@@ -41,8 +41,8 @@ Adnan Zaka & 24i-2537
 \end{tabular}
 \vfill
 Repository: \url{https://github.com/MhassaanK68/macromate}\\
-Prepared: 15 November 2026\\
-Deployment target: Streamlit Community Cloud
+Prepared: 20 November 2026\\
+Deployment target: Vercel (account authorization pending)
 \end{titlepage}
 \hypersetup{pageanchor=true}
 \pagenumbering{roman}
@@ -101,8 +101,8 @@ existing evaluated checkpoint without selecting new thresholds on the test set.
 
 Streamlit provides a Python interface directly around the recognizer, avoiding a
 separate API server for this prototype. Its AppTest tooling supports simulated
-widget interactions~\cite{streamlit-test}. Hosting is configured for Community
-Cloud with Python 3.12~\cite{streamlit-cloud}.
+widget interactions~\cite{streamlit-test}. Hosting targets Vercel's Python/ASGI
+runtime~\cite{vercel}, with Community Cloud as an alternative~\cite{streamlit-cloud}.
 
 \section{Data collection, preparation, and provenance}
 \subsection{Collection and sources}
@@ -304,28 +304,29 @@ The application entry point is \code{app.py}; reusable responsibilities remain i
 \code{app_core/inference.py}, \code{nutrition.py}, \code{meal_log.py}, and
 \code{workflow.py}. Shared brand and rendering components live in \code{app_core/ui.py},
 with a native SVG logo and stylesheet in \code{assets/}. The interface opens on a
-branded Home screen with a leaf-and-plate mark, a welcome area, and working task
-shortcuts. A forest-green sidebar leads to Home, Meal Studio, Nutrition Guide,
-Daily Log, and About MacroMate. Meal Studio retains the full photo-to-log journey;
-the guide offers a separate reference calculator without adding entries to the log.
+branded Home screen with a leaf-and-plate mark and one main Start a meal action.
+A forest-green sidebar keeps Home, Add a meal, and My day visible; Food guide
+and About sit under More. The staged meal journey shows only the current task.
+The guide offers a separate reference calculator without adding entries to the log.
 
 \begin{figure}[htbp]\centering
 \includegraphics[width=\linewidth]{app/dashboard.png}
 \caption{The redesigned branded welcome screen, captured from the local application.
-The logo, task shortcuts, and persistent navigation introduce the available sections.
+The logo, main action, and three short steps introduce the meal journey.
 This is UI evidence, not a model accuracy result.}
 \end{figure}
 
 \begin{center}\fbox{\parbox{.91\linewidth}{\centering
 Upload JPEG/PNG $\rightarrow$ validate and decode $\rightarrow$ existing CLIP recognizer\\
-$\rightarrow$ three ranked suggestions $\rightarrow$ explicit confirmation\\
-$\rightarrow$ manually entered grams $\rightarrow$ reference calculation\\
-$\rightarrow$ session log, date totals, deletion, and CSV export}}
+$\rightarrow$ automatic suggestion $\rightarrow$ check dish and enter grams\\
+$\rightarrow$ explicit confirmation and reference calculation\\
+$\rightarrow$ review, save, date totals, removal/undo, and CSV export}}
 \end{center}
 
 \subsection{Upload and model integration}
 Uploads are limited to 10 MB and 25 million decoded pixels. Content, not the
-filename extension, determines acceptance. Validation checks format, structural
+filename extension, determines acceptance. The Vercel entry point limits uploads
+to 4 MB to fit the hosting request limit. Validation checks format, structural
 integrity, full decoding, and decompression-bomb conditions before inference.
 The model receives an in-memory file with \code{prepared=False}, reusing the
 existing orientation/RGB/crop/normalization contract. No user photo is saved to disk.
@@ -337,14 +338,16 @@ under \code{models/} and the recorded experiment evidence are preserved.
 
 \subsection{Confirmation and state correctness}
 The user can choose any of the eight supported dishes, including one outside the
-top three, or select Not supported / cancel. The latter blocks estimation and
-logging. Prediction never supplies serving grams.
+top three, or select My dish isn't listed. The latter blocks estimation and
+logging. Prediction never supplies serving grams. Alternate rankings, recipe
+sources, and date changes are optional expandable details.
 
 A new image clears predictions, confirmation, and estimates while preserving
 already logged meals. Changing the dish requires confirmation again. Changing
 grams invalidates the previous estimate. Each calculation receives one entry ID;
-repeated Add operations with that ID cannot create duplicate log entries. The UI
-disables Add after success. A new calculation intentionally creates a new entry ID.
+repeated Save operations with that ID cannot create duplicate log entries. After
+saving, the UI offers My day or Add another meal. Drafts survive section changes
+within the session. A new calculation intentionally creates a new entry ID.
 
 \subsection{Nutrition calculation and assumptions}
 The CSV is joined by normalized labels, never row order. Loading requires exactly
@@ -364,8 +367,8 @@ vegetable proxy. Other regional and recipe differences remain material.
 
 \begin{figure}[htbp]\centering
 \includegraphics[width=\linewidth]{app/nutrition_guide.png}
-\caption{Nutrition Guide provides an interactive reference calculator with serving
-grams, recipe assumptions, source links, and a route back to Meal Studio. Exploring
+\caption{Food guide provides an interactive reference calculator with serving
+grams, optional recipe/source details, and a route back to the meal. Exploring
 these values does not create a meal-log entry.}
 \end{figure}
 
@@ -373,7 +376,8 @@ these values does not create a meal-log entry.}
 Each session has its own \code{MealWorkflow} and \code{MealLog}. Entries contain an
 ID, chosen meal date, insertion timestamp, confirmed dish, serving grams,
 macronutrients, energy, and source ID. Totals filter by the explicitly selected
-date. Removal uses an entry ID. Export supports the selected date or all dates.
+date. Removal uses an entry ID; Undo restores the latest removed entry with its
+identity and position. Export supports the selected date or all dates.
 Refresh, disconnection, hibernation, or restart can end a session; the UI states
 this clearly and offers CSV export. No database or durable-storage claim is made.
 
@@ -388,15 +392,18 @@ combined-dataset; attribution remains in the manifest.}
 
 \begin{figure}[htbp]\centering
 \includegraphics[width=\linewidth]{app/daily_log.png}
-\caption{The same deliberately corrected meal in the daily log, with date totals,
-source ID, removal, and CSV controls. The downloaded CSV was checked against the
-logged serving. Values demonstrate software behavior rather than independent recipe validation.}
+\caption{The same deliberately corrected meal in My day, with date totals,
+removal, and CSV controls. Undo restores the entry and its totals. Source IDs
+remain in exported CSV. Values demonstrate software behavior rather than independent recipe validation.}
 \end{figure}
 
 \section{Deployment and software validation}
 \subsection{Reproducible deployment}
-The target is Streamlit Community Cloud, Python 3.12, repository-root
-\code{requirements.txt}, and \code{app.py}. Setup instructions and recovery steps
+The requested target is Vercel, Python 3.12, repository-root
+\code{requirements.txt}, and the ASGI entry point \code{server:app}. The wrapper
+serves the same UI and limits uploads to 4 MB. Vercel configuration provisions
+verified model assets at build time and requires Fluid Compute / Large Functions.
+Community Cloud with \code{app.py} remains an alternative. Setup and recovery steps
 are in \code{docs/deployment.md}. CPU wheels are discoverable through the official
 PyTorch CPU index. Secrets are not needed for the public model assets.
 
@@ -404,7 +411,7 @@ The adapted checkpoint is not the full CLIP model. The setup script verifies the
 released ZIP and extracted checkpoint with fixed SHA-256 values, then provisions
 the pinned base cache and verifies its Git/LFS identities. A local integrity
 manifest supports subsequent offline verification. All assets and downloaded
-archives remain excluded from Git. The UI provisions assets once per process on
+archives remain excluded from Git. The standalone UI provisions assets once per process on
 the first recognition request and explains the longer initial wait.
 
 \subsection{Validation evidence and status}
@@ -433,14 +440,14 @@ hashes, checkpoint identity, and environment are retained in
 
 \begin{center}\begin{tabularx}{\linewidth}{Xr}
 \toprule Local software measurement & Observed result\\\midrule
-Automated application tests & 63 passed\\
+Automated application tests (20 November) & 70 passed\\
 Dependency consistency & No broken requirements\\
 Cold model initialization (including imports) & 14.139 s\\
 Warm adapter inference, median of ten & 0.148 s\\
 Warm adapter inference, slowest of ten & 0.178 s\\
 \bottomrule\end{tabularx}\end{center}
 Downloads, UI interaction, and network latency are excluded. These figures do not
-guarantee Community Cloud performance. Public-host checks remain subject to the
+guarantee hosted performance. Public-host checks remain subject to the
 account authorization and deployment evidence recorded in the release notes.
 
 A depth-one clean Git checkout also passed all 61 application tests without a
@@ -453,11 +460,11 @@ the application suite on Ubuntu/Python 3.12 for application commit
 replace the Windows real-model measurements or public deployment acceptance.
 The run is linked in the validation notes.
 
-The subsequent branded-interface revision passed 63 local tests, including Home
-shortcuts, section navigation, the reference calculator, and the complete existing
-meal workflow. Desktop and mobile layouts were reviewed separately. The timing
-table retains the earlier real-model measurements; the visual redesign did not
-retrain the model or repeat held-out evaluation.
+The simplified-interface revision passed 70 local tests, including automatic
+recognition, explicit confirmation, draft recovery, retry, single-save behavior,
+unsupported food, and removal/undo. Desktop and mobile layouts were reviewed
+separately with a real non-held-out photo. The timing table retains the earlier
+real-model measurements; the UX revision did not retrain or repeat held-out evaluation.
 
 \section{Limitations and future work}
 The main limits are the small and source-confounded collection, pending second
@@ -495,6 +502,8 @@ Image Recognition at Scale. ICLR, 2021. \url{https://arxiv.org/abs/2010.11929}.
 \url{https://docs.streamlit.io/develop/api-reference/app-testing/st.testing.v1.apptest}.
 \bibitem{streamlit-cloud} Streamlit. Deploy your app on Community Cloud.
 \url{https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/deploy}.
+\bibitem{vercel} Vercel. Python runtime and deployment configuration.
+\url{https://vercel.com/docs/functions/runtimes/python}.
 \bibitem{repo} MacroMate team. Source, manifests, nutrition references, and recorded
 experimental evidence. \url{https://github.com/MhassaanK68/macromate}.
 \end{thebibliography}

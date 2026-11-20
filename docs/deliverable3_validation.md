@@ -1,28 +1,34 @@
 # Deliverable 3 validation and release status
 
-## Branded interface revision
+## Simplified interface revision — 20 November 2026
 
-The updated app opens on Home with a custom vector leaf-and-plate logo, a welcome
-area, and working task shortcuts. Navigation contains Home, Meal Studio, Nutrition
-Guide, Daily Log, and About MacroMate. The guide scales the existing recipe
-references by user-entered grams but does not add meals. Shared presentation is
+The app opens on Home with the custom leaf-and-plate logo and one main Start a
+meal action. Main navigation contains Home, Add a meal, and My day. Food guide
+and About are under More. Photo upload starts recognition automatically; users
+check dish/grams, explicitly confirm to calculate, review, and save. Each stage
+shows its next action. Optional rankings, sources, and meal dates are collapsed.
+Drafts survive section changes in the current session, errors offer explicit
+retry, saved meals cannot be added twice, and removal offers Undo. The guide
+scales recipe references by user-entered grams without logging. Shared presentation is
 organized in `app_core/ui.py`; the required brand assets are `assets/logo.svg` and
 `assets/styles.css`. No UI framework or dependency was added.
 
-The revised suite passed **63 tests**, including Home/task navigation, the
-reference calculator, and the original recognition/confirmation/logging flow.
+The revised suite passed **70 tests**; `pip check` found no broken requirements.
+Checks cover staged confirmation, navigation/draft recovery, failed inference
+retry without repeated automatic calls, invalid/unsupported inputs, single-save
+behavior, and removal/undo. Test-only model doubles remain confined to tests.
 The earlier 61-test clean-checkout and CI results below describe the original
 application release. Its real-model timings and source identities remain historical
 measurements; the visual redesign does not claim new model accuracy or latency.
 
-Browser checks covered the 1440-pixel desktop and 390-pixel mobile layouts.
-Neither page had horizontal overflow at the mobile breakpoint; nutrition metrics
-formed a readable two-column grid. Home shortcuts and the mobile sidebar reached
-the task sections. The real recognizer returned suggestions in Meal Studio;
-manual correction, confirmation, calculation, one-time addition, and the direct
-result-to-Daily-Log shortcut worked. Progress labels advanced with the workflow.
-The 150-g biryani reference explorer displayed 160.34 kcal without creating a log
-entry. Updated report screenshots use the redesigned interface.
+Browser checks covered the 1440-pixel desktop and 390-pixel phone layouts.
+The review screen had no horizontal overflow and metrics formed two columns on
+the phone. A real non-held-out biryani photo was recognized automatically;
+manual correction to karahi at 150 g produced 156.88 kcal. Explicit confirmation,
+save, See my day, removal, and Undo restored the single entry and its totals.
+The photo's first recognition required model initialization; this was a functional
+check, not a new latency measurement or an independent usability study.
+Updated report screenshots show the current interface.
 
 ## Scope and evidence
 
@@ -73,12 +79,12 @@ Inference unit tests and Streamlit AppTest replace model calls with explicit
 test-only doubles. Production has no fake-prediction mode. Real-model integration
 and browser observations are recorded separately below.
 
-## Browser review
+## Original application browser review (historical)
 
 The local dashboard renders with the requested light/green design and readable
 labels. Before upload, prediction is disabled. A corrupt `.jpg` uploaded through
 the browser displayed **This file is not a readable image** and kept prediction
-disabled. The initial screenshot is retained in `figures/app/dashboard.png`.
+disabled. Current screenshots have replaced the original interface views.
 
 Real browser verification also completed recognition on a non-held-out biryani
 photo, manual correction to chicken karahi, explicit confirmation at 150 g,
@@ -91,8 +97,8 @@ returned to zero. A second browser tab opened a distinct Streamlit session with
 an empty log while the first session retained its meal. This verifies separate
 tab sessions locally, not cross-user isolation on the public deployment.
 
-`figures/app/serving.png` and `figures/app/daily_log.png` show this real-model
-demonstration. No fabricated predictions were used for screenshots.
+The current screenshots replace the original views and show the simplified UX
+review above. No fabricated predictions were used for screenshots.
 
 ## Real-model integration and timing
 
@@ -118,13 +124,23 @@ on this machine, not latency guarantees or new accuracy estimates. The original
 
 ## Hosting status
 
-Public deployment is awaiting account authorization. No public URL, host restart
-result, or independent usability review is claimed until observed.
-Streamlit's Create app flow requires the user's GitHub
-sign-in/authorization; that account step is outside application source code.
+The requested host changed from Community Cloud to **Vercel** on 20 November.
+`server.py` exposes the same UI through Streamlit's ASGI API. The entry point
+served Home, interactive navigation, and the configured 4 MB uploader locally
+through Uvicorn. The Vercel configuration passed the current official JSON schema
+checks. One regression test verifies the hosting upload limit; the model and
+experiment evidence are unchanged. See `docs/deployment.md` for build packaging,
+Large Functions/Fluid requirements, and bounded WebSocket session lifetime.
+
+Public deployment is awaiting account authorization. The installed Vercel CLI
+reported `login_required`. Browser sign-in reached the existing GitHub account
+picker, but automatic approval review rejected continuing because it would
+authorize profile/email access for Vercel. No new access was granted. This step
+needs explicit user approval. No public URL, cloud build, host restart result,
+or independent usability review is claimed until observed.
 
 Local model, browser, export, and separate-tab checks above are complete. Remaining
-host acceptance checks are: deploy on Community Cloud, repeat the workflow after
+host acceptance checks are: deploy on Vercel, repeat the workflow after
 a host restart, inspect resource use, verify independent users/sessions, and record
 the public URL and deployed commit. Portal submission and viva participation
 remain the team's responsibility.
